@@ -103,7 +103,6 @@ const item = o => (ITEMS.push(o), o);
 const SEATS = {};
 const OWNERS = ['rex', 'david', 'lyra', 'kai', 'finn', 'jay', 'quinn', 'sage'];
 const DESKS = [[14, 5], [18, 5], [24, 5], [28, 5], [14, 11], [18, 11], [24, 11], [28, 11]];
-const HOT = [[14, 17], [18, 17], [24, 17], [28, 17]];
 let people = [];
 const ownerTyping = id => { const p = people.find(q => q.id === id); return !!(p && p.state === 'type'); };
 
@@ -309,9 +308,11 @@ function sideTable(c, r) { const cx = c * T + 8, cy = r * T + TOPM + 9;
 DESKS.forEach(([c, r], i) => { workstation(c, r, OWNERS[i], i); chair(c + 1, r + 2); SEATS[OWNERS[i]] = { c: c + 1, r: r + 2 }; });
 plant2(22, 5); plant2(22, 11); plant(13, 16); plant(32, 16);
 bigPlant(13, 25); bigPlant(31, 25);
-// centre of the floor: a third row of hot desks (always-on market screens), mirrored on the rows above
-for (const [c, r] of HOT) { workstation(c, r, null, 2 + c % 5, { always: 1 }); chair(c + 1, r + 2); }
-plant2(22, 17);
+// centre of the floor: exactly one desk per teammate above; below, a client lounge instead of spare desks
+sprite('SOFA_F', 22, 18, { block: [22, 18, 2, 1], z: 19 * T }); sprite('SOFA_S', 21, 19, { block: [21, 19, 1, 2], z: 21 * T });
+sprite('SOFA_S', 24, 19, { mirror: 1, block: [24, 19, 1, 2], z: 21 * T }); sprite('CTABLE', 22, 19, { block: [22, 19, 2, 2], z: 21 * T - 1 });
+sprite('SOFA_B', 22, 21, { block: [22, 21, 2, 1], z: 22 * T }); sprite('COFFEE', 22, 19, { z: 21 * T - .5, dx: 8, dy: 6 });
+floorLamp(20, 18); floorLamp(26, 18); plant2(17, 19); plant2(28, 19);
 bench(18, 24, 4); bench(25, 24, 4);
 wallChart(20 * T + 6, TOPM - 13, 6 * T - 12, 22, T + .4);
 roundTable(30, 19); sprite('COFFEE', 30, 18, { z: 20 * T + .1, dy: 3 });
@@ -330,7 +331,7 @@ sprite('WCH_B', 5, 24, { block: [5, 25, 1, 1], z: 26 * T + .5 }); sprite('WCH_B'
 plant(1, 26); bigPlant(10, 25);
 for (const c of [34, 36, 38, 41, 43]) rack(c, 1);
 for (const c of [38, 40, 42]) rack(c, 10);
-workstation(35, 6, null, 3, { always: 1, w: 2, mons: [[35 * T + 9, 6 * T + TOPM - 7, 14, 10]] }); chair(36, 8);
+bigPlant(35, 6);
 plant2(44, 6);
 aquarium(41, 16);
 art(35 * T + 4, 15 * T + TOPM - 13, 34, 16, 16 * T + .3, 1);
@@ -343,9 +344,9 @@ bigPlant(42, 25); plant(34, 16);
 
 // static light rig (warm downlights + window wash)
 const LIGHTS = [];
-[...DESKS, ...HOT].forEach(([c, r]) => LIGHTS.push([c * T + 24, r * T + TOPM + 26, 58, '#ffe6c4', .62]));
+DESKS.forEach(([c, r]) => LIGHTS.push([c * T + 24, r * T + TOPM + 26, 58, '#ffe6c4', .62]));
 for (let x = 14 * T; x <= 32 * T; x += 48) LIGHTS.push([x, TOPM + 22, 46, '#9cc3ff', .42]);
-LIGHTS.push([20 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [27 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [23 * T, 15 * T + TOPM, 60, '#ffe6c4', .3]);
+LIGHTS.push([23 * T, 20 * T + TOPM, 70, '#ffe6c4', .55], [20 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [27 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [23 * T, 15 * T + TOPM, 60, '#ffe6c4', .3]);
 LIGHTS.push([30 * T + 8, 19 * T + TOPM, 40, '#ffd29a', .5], [14 * T, 20 * T + TOPM, 50, '#ffe6c4', .35], [31 * T, 22 * T + TOPM, 50, '#ffe6c4', .35]);
 LIGHTS.push([4 * T, 4 * T + TOPM, 64, '#ffcf8a', .75], [6 * T, 13 * T + TOPM, 50, '#ffcf8a', .4]);
 LIGHTS.push([6 * T, 22 * T + TOPM, 96, '#fff0d8', .95], [6 * T, 27 * T + TOPM, 50, '#fff0d8', .3]);
@@ -543,11 +544,25 @@ function outline(s, x, y) { let o = outCache.get(s); if (!o) { o = mk(18, 34); c
 let dpr = 1; const cam = { x: 0, y: 0, z: 1 };
 const isWide = () => innerWidth >= 1000;
 function resize() { dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(innerWidth * dpr); cv.height = Math.round(innerHeight * dpr); }
-function fitTarget() { const L = isWide() ? 300 : 12, Tp = isWide() ? 84 : 64, Rt = isWide() ? 84 : 12, B = isWide() ? 28 : 104;
-  const aw = innerWidth - L - Rt, ah = innerHeight - Tp - B, top = TOPM - 24, hh = H - top + 8;
+// HUD is laid out as one composition with the office: [roster | gap | framed map | gap | controls], centred as a unit.
+const HUD = { RW: 264, G: 20, CW: 52, M: 24, Tp: 92, B: 34 }; let LAY = null;
+function fitTarget() { const top = TOPM - 24, hh = H - top + 8, fwW = W + 16;
+  if (isWide()) { const { RW, G, CW, M, Tp, B } = HUD, aw = innerWidth - 2 * M - RW - CW - 2 * G, ah = innerHeight - Tp - B;
+    const z = Math.max(.3, Math.min(aw / fwW, ah / hh)), fw = fwW * z, fh = hh * z, x0 = Math.max(M, (innerWidth - (RW + G + fw + G + CW)) / 2);
+    const fx = x0 + RW + G, fy = Tp + Math.max(0, (ah - fh) / 2); LAY = { x0, fx, fy, fw, fh };
+    return { z, x: fx + 8 * z, y: fy - top * z }; }
+  LAY = null; const L = 12, Tp = 64, Rt = 12, B = 104, aw = innerWidth - L - Rt, ah = innerHeight - Tp - B;
   if (innerWidth < 700 && innerHeight > innerWidth) { const z = Math.min(aw / (23 * T), ah / hh * 1.6); return { z, x: L + aw / 2 - 23 * T * z, y: Tp + ah / 2 - (17 * T + TOPM) * z }; }
-  const z = Math.max(.3, Math.min(aw / (W + 16), ah / hh)); return { z, x: L + (aw - W * z) / 2, y: Tp + (ah - hh * z) / 2 - top * z }; }
-function fit() { Object.assign(cam, fitTarget()); }
+  const z = Math.max(.3, Math.min(aw / fwW, ah / hh)); return { z, x: L + (aw - W * z) / 2, y: Tp + (ah - hh * z) / 2 - top * z }; }
+function layoutHUD() { const ids = ['top', 'roster', 'ctrl', 'nowp', 'hint'], el = Object.fromEntries(ids.map(i => [i, document.getElementById(i)]));
+  if (!LAY) { ids.forEach(i => el[i].removeAttribute('style')); document.body.classList.remove('anch'); return; }
+  const { x0, fx, fy, fw, fh } = LAY, px = v => Math.round(v) + 'px'; document.body.classList.add('anch');
+  Object.assign(el.roster.style, { left: px(x0), top: px(fy), height: px(fh) });
+  Object.assign(el.top.style, { left: px(fx), width: px(fw), right: 'auto', top: px(Math.max(8, fy - 66)) });
+  Object.assign(el.ctrl.style, { left: px(fx + fw + HUD.G), right: 'auto', top: px(fy + fh / 2) });
+  Object.assign(el.nowp.style, { right: px(innerWidth - (fx + fw + HUD.G) + 10), top: px(fy + fh / 2 + 66) });
+  Object.assign(el.hint.style, { left: px(fx + fw / 2), bottom: px(Math.max(6, innerHeight - (fy + fh) - 28)) }); }
+function fit() { Object.assign(cam, fitTarget()); layoutHUD(); }
 function zoomNow(f, sx, sy) { const nz = Math.max(0.3, Math.min(7, cam.z * f)); cam.x = sx - (sx - cam.x) * nz / cam.z; cam.y = sy - (sy - cam.y) * nz / cam.z; cam.z = nz; }
 const zt = { f: 1, sx: 0, sy: 0 }; let ct = null;
 function zoomAt(f, sx, sy) { ct = null; zt.f = Math.max(0.6, Math.min(1.8, zt.f * f)); zt.sx = sx; zt.sy = sy; }
@@ -560,7 +575,7 @@ function camStep(dt) {
   if (inertia && !drag) { cam.x += inertia[0] * dt; cam.y += inertia[1] * dt; const d = Math.exp(-dt * 5); inertia[0] *= d; inertia[1] *= d; if (Math.hypot(inertia[0], inertia[1]) < 4) inertia = null; }
 }
 function fitSmooth() { const f = fitTarget(); glide(f.z, f.x, f.y); }
-function focus(p) { const nz = Math.max(cam.z, Math.min(4.2, innerHeight / 150)); const cx = isWide() ? (innerWidth + 280) / 2 : innerWidth / 2, cy = innerHeight / 2 - (isWide() ? 0 : 40);
+function focus(p) { const nz = Math.max(cam.z, Math.min(4.2, innerHeight / 150)); const cx = LAY ? LAY.fx + LAY.fw / 2 : innerWidth / 2, cy = innerHeight / 2 - (isWide() ? 0 : 40);
   glide(nz, cx - p.x * nz, cy - (p.y + TOPM - 14) * nz); }
 const toWorld = (sx, sy) => [(sx - cam.x) / cam.z, (sy - cam.y) / cam.z - TOPM];
 cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); ct = null; inertia = null; if (ptrs.size === 1) { drag = [e.clientX, e.clientY]; moved = 0; lastMove = [0, 0, performance.now()]; } else if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); } cv.classList.add('drag'); });
@@ -662,7 +677,7 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
   if (Math.random() < dt * 5) tickCandle(); candleT += dt; if (candleT > 3) { candleT = 0; candles.shift(); candles.push(newCandle()); }
   render(t); placeLabels(); placeOverlays(); requestAnimationFrame(frame); }
 (async () => {
-  resize(); fit(); addEventListener('resize', () => { resize(); if (!sel) { ct = null; fit(); } });
+  resize(); fit(); addEventListener('resize', () => { resize(); if (!sel) { ct = null; fit(); } else { fitTarget(); layoutHUD(); } });
   const t0 = performance.now();
   try { await loadAll(k => { $('spbar').style.width = Math.round(k * 100) + '%'; }); }
   catch (e) { $('spmsg').textContent = 'ASSET LOAD FAILED — PLEASE REFRESH'; return; }
