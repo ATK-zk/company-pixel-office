@@ -11,7 +11,7 @@ Live pixel headquarters for our 8-person Polymarket Perps trading desk (David, R
 - **Depth:** a panoramic night-skyline window with parallax, a parallax blueprint grid around the building, a floating drop shadow and architectural frame marks.
 - **Typography:** Chakra Petch (UI) and JetBrains Mono (numbers). English only.
 - **Centrepiece:** the NET ASSET VALUE display shows the **real** Polymarket Perps account equity and day P&L from `status.json` (`net_value`), plus a LIVE / LAST SYNC state. All other screens (wall chart, desk monitors, war-room heatmap) are decorative animation with no labels.
-- **People:** speech and thought bubbles are occasional and staggered. At most one ambient bubble shows at a time; it fades in, stays about 4 seconds, then fades out. A bubble also appears when you select someone.
+- **People:** speech and thought bubbles are occasional and staggered. Usually one or two ambient bubbles show at once (never more than three, never the whole team), with start times staggered; each fades in, stays about 3.5–5 seconds, then fades out. A bubble also appears when you select someone.
 - **Camera:** eased glide-to-fit intro, smooth slow wheel/pinch zoom, drag with inertia, click a teammate to focus. Keys: `+` / `-` zoom, `0` or `Esc` to reset.
 - **Sound:** CC0 soundtrack. It starts silent and plays only after you tap the sound button (see MUSIC_CREDITS.md).
 

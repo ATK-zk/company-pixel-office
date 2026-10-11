@@ -639,8 +639,8 @@ function placeLabels() { const sc = Math.max(.7, Math.min(1.15, cam.z / 2.4)), s
     if (L.on || L.bub.classList.contains('in')) L.bub.style.transform = `translate(${Math.round(sx - L.bub.offsetWidth * sc / 2)}px,${Math.round(top - L.bub.offsetHeight * sc - 4)}px) scale(${sc})`; } }
 function placeOverlays() { for (const o of OV) o.el.style.transform = `translate(${cam.x + o.wx * cam.z}px,${cam.y + o.wy * cam.z}px) scale(${cam.z})`; }
 
-// speech bubbles: occasional and staggered — at most one ambient bubble at a time (plus the one you clicked), each fades in, lingers ~4 s, fades out
-let bubK = 0, clock = 0; const BUB = { cur: null, next: 2.5, last: null };
+// speech bubbles: a few at a time, staggered — usually 1–2, at most 3 ambient bubbles at once (never the whole team); starts are spaced >= 1.2 s apart, each fades in, lingers ~3.5–5 s, fades out
+let bubK = 0, clock = 0; const BUB = { act: new Set(), next: 1.5, cool: {} }; const BUB_MAX = 3;
 function bubText(p) { const s = STATUS.team[p.id] || {}, w = working(p), L = LINES[p.id] || { work: [], idle: [] };
   const pool = (w ? L.work : L.idle).concat(s.task_en ? [s.task_en] : []); bubK++;
   return { line: pool[(bubK + people.indexOf(p)) % Math.max(1, pool.length)] || (w ? 'working...' : 'chilling...'), think: !w && Math.random() < .5 }; }
@@ -649,8 +649,14 @@ function showBub(p, dur) { const L = LBL[p.id]; if (!L) return; const b = bubTex
   L.bub.className = 'bub' + (b.think ? ' think' : ''); void L.bub.offsetWidth; L.bub.classList.add('in'); L.on = true; L.until = clock + dur; }
 function hideBub(p) { const L = LBL[p.id]; if (L && L.on) { L.on = false; L.bub.classList.remove('in'); } }
 function bubbleTick(dt) { clock += dt;
-  for (const p of people) { const L = LBL[p.id]; if (L && L.on && clock >= L.until) { hideBub(p); if (BUB.cur === p) { BUB.cur = null; BUB.last = p; BUB.next = clock + 3.5 + Math.random() * 5; } } }
-  if (!BUB.cur && clock >= BUB.next) { const pool = people.filter(p => p !== BUB.last && p !== sel && !LBL[p.id].on); if (pool.length) { const p = pool[Math.floor(Math.random() * pool.length)]; BUB.cur = p; showBub(p, 3.8 + Math.random() * 1.2); } } }
+  for (const p of people) { const L = LBL[p.id]; if (L && L.on && clock >= L.until) { hideBub(p); if (BUB.act.delete(p)) BUB.cool[p.id] = clock + 7 + Math.random() * 6; } }
+  if (clock < BUB.next) return;
+  const n = BUB.act.size, cap = Math.min(BUB_MAX, Math.max(1, people.length - 2));
+  // the more bubbles already up, the less likely another joins: 0 -> always, 1 -> 65%, 2 -> 30%, 3 -> never
+  const join = n === 0 ? 1 : n === 1 ? .65 : n === 2 ? .3 : 0;
+  if (n < cap && Math.random() < join) { const pool = people.filter(p => p !== sel && !LBL[p.id].on && clock >= (BUB.cool[p.id] || 0));
+    if (pool.length) { const p = pool[Math.floor(Math.random() * pool.length)]; BUB.act.add(p); showBub(p, 3.5 + Math.random() * 1.5); } }
+  BUB.next = clock + (n === 0 ? 1.2 + Math.random() * 1.8 : 1.4 + Math.random() * 2.6); }
 
 const money = v => '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 let navShown = null, navAnim = null;
