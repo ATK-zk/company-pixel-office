@@ -374,14 +374,29 @@ function buildRoam() { for (let r = 1; r < ROWS - 1; r++) for (let c = 1; c < CO
 
 // ---------- characters ----------
 const STATUS = { team: {} };
-people = TEAM.map(m => ({ ...m, x: 0, y: 0, c: 0, r: 0, dir: 'down', state: 'idle', path: [], fT: 0, frame: 0, wait: 1 + Math.random() * 3, want: 'roam', seated: false }));
+people = TEAM.map(m => ({ ...m, x: 0, y: 0, c: 0, r: 0, dir: 'down', state: 'idle', path: [], fT: 0, frame: 0, wait: 1 + Math.random() * 3, want: 'roam', mode: 'roam', modeT: 10 + Math.random() * 40, seated: false }));
 function place(p, c, r) { p.c = c; p.r = r; p.x = c * T + 8; p.y = r * T + 8; }
 function working(p) { const s = STATUS.team[p.id]; return !!(s && String(s.state).toUpperCase() === 'WORKING'); }
+// motion schedule: working teammates mostly sit at their desk but periodically get up for a short wander
+// (stretch, coffee, chat); idle teammates mostly roam but now and then drop into their own chair for a while.
+const rnd = (a, b) => a + Math.random() * (b - a);
+function roamingWorkers() { return people.filter(q => q.want === 'work' && q.mode === 'roam').length; }
+function setMode(p, m) { p.mode = m;
+  if (p.want === 'work') p.modeT = m === 'desk' ? rnd(40, 80) : rnd(8, 15);
+  else p.modeT = m === 'desk' ? rnd(12, 26) : rnd(25, 60);
+  if (m === 'roam') p.wait = rnd(0.2, 1.2); }
 function initPeople() { people.forEach(p => { p.want = working(p) ? 'work' : 'roam';
-  if (p.want === 'work') { const s = SEATS[p.id]; place(p, s.c, s.r); p.state = 'type'; p.dir = 'up'; p.seated = true; }
-  else { const [c, r] = ROAM[Math.floor(Math.random() * ROAM.length)]; place(p, c, r); } }); }
+  if (p.want === 'work') { const s = SEATS[p.id]; place(p, s.c, s.r); p.state = 'type'; p.dir = 'up'; p.seated = true; p.mode = 'desk'; p.modeT = rnd(6, 45); }
+  else { const [c, r] = ROAM[Math.floor(Math.random() * ROAM.length)]; place(p, c, r); p.mode = 'roam'; p.modeT = rnd(10, 50); } }); }
 function update(p, dt) {
-  p.want = working(p) ? 'work' : 'roam';
+  const want = working(p) ? 'work' : 'roam';
+  if (want !== p.want) { p.want = want; setMode(p, want === 'work' ? 'desk' : 'roam'); }
+  p.modeT -= dt;
+  if (p.modeT <= 0 && !(p.state === 'walk' && p.mode === 'desk')) {
+    if (p.mode === 'desk') { if (p.want === 'work' && roamingWorkers() >= 2) p.modeT = rnd(4, 8); else setMode(p, 'roam'); }
+    else if (p.want === 'work' || Math.random() < 0.65) { setMode(p, 'desk'); if (p.state === 'walk') p.path = []; }
+    else p.modeT = rnd(10, 25);
+  }
   if (p.state === 'walk') {
     const nx = p.path[0]; if (!nx) { arrive(p); return; }
     const tx = nx[0] * T + 8, ty = nx[1] * T + 8, dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), step = 40 * dt;
@@ -391,17 +406,20 @@ function update(p, dt) {
     p.fT += dt; if (p.fT > 0.16) { p.fT -= 0.16; p.frame = (p.frame + 1) % 4; }
     return;
   }
-  if (p.want === 'work') {
+  if (p.mode === 'desk') {
     const s = SEATS[p.id];
-    if (p.c === s.c && p.r === s.r) { p.state = 'type'; p.dir = 'up'; p.seated = true; p.fT += dt; if (p.fT > 0.3) { p.fT -= 0.3; p.frame = (p.frame + 1) % 2; } return; }
+    if (p.c === s.c && p.r === s.r) { p.state = 'type'; p.dir = 'up'; p.seated = true;
+      if (p.want === 'work') { p.fT += dt; if (p.fT > 0.3) { p.fT -= 0.3; p.frame = (p.frame + 1) % 2; } }
+      else { p.fT += dt; if (p.fT > 1.6) { p.fT = 0; p.frame = Math.random() < .25 ? 1 : 0; } } // idle at desk: mostly still, the odd tap
+      return; }
     go(p, s.c, s.r); return;
   }
-  if (p.seated) { p.seated = false; p.state = 'idle'; p.wait = 0.5; }
+  if (p.seated) { p.seated = false; p.state = 'idle'; p.wait = Math.min(p.wait, 0.5); }
   p.state = 'idle'; p.wait -= dt;
-  if (p.wait <= 0) { const [c, r] = ROAM[Math.floor(Math.random() * ROAM.length)]; go(p, c, r); p.wait = 4 + Math.random() * 8; }
+  if (p.wait <= 0) { const [c, r] = ROAM[Math.floor(Math.random() * ROAM.length)]; go(p, c, r); p.wait = p.want === 'work' ? rnd(1.5, 4) : rnd(4, 12); }
 }
 function go(p, c, r) { const path = bfs(p.c, p.r, c, r); if (path && path.length) { p.path = path; p.state = 'walk'; p.seated = false; } else p.wait = 1; }
-function arrive(p) { p.state = 'idle'; p.frame = 0; if (p.want !== 'work') p.dir = Math.random() < .6 ? 'down' : ['left', 'right', 'up'][Math.floor(Math.random() * 3)]; }
+function arrive(p) { p.state = 'idle'; p.frame = 0; if (p.mode !== 'desk') p.dir = Math.random() < .6 ? 'down' : ['left', 'right', 'up'][Math.floor(Math.random() * 3)]; }
 function spriteOf(p) { const d = CHARS[p.id][p.dir];
   if (p.state === 'walk') return d[[0, 1, 2, 1][p.frame]];
   if (p.state === 'type') return d[3 + (p.frame % 2)];
@@ -692,7 +710,7 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
 
 // ---------- zoom controls hide/show (remembered per browser) ----------
 (function () { const nav = document.getElementById('ctrl'), b = document.getElementById('ztog'); if (!nav || !b) return;
-  const apply = h => { nav.classList.toggle('zhide', h); const t = h ? 'Show zoom controls' : 'Hide zoom controls'; b.title = t; b.setAttribute('aria-label', t); b.setAttribute('aria-expanded', String(!h));
+  const apply = h => { nav.classList.toggle('zhide', h); document.body.classList.toggle('zhide', h); const t = h ? 'Show view & sound controls' : 'Hide view & sound controls'; b.title = t; b.setAttribute('aria-label', t); b.setAttribute('aria-expanded', String(!h));
     try { localStorage.setItem('pxo.zoomHidden', h ? '1' : '0'); } catch (e) { } if (typeof layoutHUD === 'function') try { layoutHUD(); } catch (e) { } };
   let h = false; try { h = localStorage.getItem('pxo.zoomHidden') === '1'; } catch (e) { }
   apply(h); b.addEventListener('click', e => { e.stopPropagation(); apply(!nav.classList.contains('zhide')); }); })();

@@ -172,7 +172,9 @@ body.anch .nav,body.anch .nav *{white-space:nowrap}
 @media (max-width:1499px){body.anch .nav .seg{padding:0 11px;gap:7px}body.anch .nav .seg b{font-size:15px}body.anch .nav .seg:first-child b{font-size:16px}body.anch .meta{gap:14px}}
 
 /* zoom controls hide/show toggle */
-#ctrl .zgrp{display:flex;flex-direction:column;gap:2px;overflow:hidden;max-height:140px;opacity:1;transition:max-height .35s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
+#ctrl .zgrp{display:flex;flex-direction:column;gap:2px;overflow:hidden;max-height:220px;opacity:1;transition:max-height .35s cubic-bezier(.2,.8,.2,1),opacity .25s ease}
 #ctrl.zhide .zgrp{max-height:0;opacity:0;pointer-events:none}
 #ctrl #ztog .ztog-x{transition:opacity .2s}
 #ctrl.zhide #ztog{color:var(--gold-hi)}
+body.zhide #nowp{opacity:0!important;visibility:hidden}
+#ctrl.zhide .zgrp{visibility:hidden;transition:max-height .35s cubic-bezier(.2,.8,.2,1),opacity .25s ease,visibility 0s linear .35s}
