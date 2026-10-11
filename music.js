@@ -8,9 +8,9 @@
   let i = 0, on = false;
   a.volume = 0.4;
   const pick = t => t.src[0];
-  const load = () => { a.src = pick(TRACKS[i]); btn.title = (on ? 'ปิดเพลง · ' : 'เปิดเพลง · ') + TRACKS[i].name; };
-  const ui = () => { btn.textContent = on ? '🎵' : '🔇'; btn.classList.toggle('on', on); btn.setAttribute('aria-label', on ? 'ปิดเพลง' : 'เปิดเพลง'); load_title(); };
-  const load_title = () => { btn.title = (on ? 'ปิดเพลง · ' : 'เปิดเพลง · ') + TRACKS[i].name; };
+  const load = () => { a.src = pick(TRACKS[i]); btn.title = (on ? 'Music off · ' : 'Music on · ') + TRACKS[i].name; };
+  const ui = () => { btn.textContent = on ? '🎵' : '🔇'; btn.classList.toggle('on', on); btn.setAttribute('aria-label', on ? 'Music off' : 'Music on'); load_title(); };
+  const load_title = () => { btn.title = (on ? 'Music off · ' : 'Music on · ') + TRACKS[i].name; };
   a.addEventListener('ended', () => { i = (i + 1) % TRACKS.length; load(); a.play().catch(() => {}); });
   load(); a.muted = true; a.play().catch(() => {});
   function set(v) {
