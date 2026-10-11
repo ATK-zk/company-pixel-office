@@ -1,13 +1,13 @@
-// Background music: CC0 medieval-town loops (see MUSIC_CREDITS.md). Starts muted (browser autoplay policy); tap 🔇 to unmute.
+// Background music: CC0 cyberpunk / synthwave loops (see MUSIC_CREDITS.md). Starts muted (browser autoplay policy); tap 🔇 to unmute.
 (() => {
   const TRACKS = [
-    { name: 'Shakkar — Chris Murphy (zesona), CC0', src: ['assets/music/shakkar.mp3', 'assets/music/shakkar.ogg'] },
-    { name: 'Medieval Village Square — Tozan, CC0', src: ['assets/music/village-square.mp3', 'assets/music/village-square.ogg'] },
+    { name: 'Dark City — cinameng, CC0', src: ['assets/music/darkcity.mp3'] },
+    { name: 'Space City — MintoDog, CC0', src: ['assets/music/space-city.mp3'] },
   ];
   const a = document.getElementById('bgm'), btn = document.getElementById('music');
   let i = 0, on = false;
-  a.volume = 0.45;
-  const pick = t => (a.canPlayType('audio/mpeg') ? t.src[0] : t.src[1]);
+  a.volume = 0.4;
+  const pick = t => t.src[0];
   const load = () => { a.src = pick(TRACKS[i]); btn.title = (on ? 'ปิดเพลง · ' : 'เปิดเพลง · ') + TRACKS[i].name; };
   const ui = () => { btn.textContent = on ? '🎵' : '🔇'; btn.classList.toggle('on', on); btn.setAttribute('aria-label', on ? 'ปิดเพลง' : 'เปิดเพลง'); load_title(); };
   const load_title = () => { btn.title = (on ? 'ปิดเพลง · ' : 'เปิดเพลง · ') + TRACKS[i].name; };
