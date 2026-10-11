@@ -1,4 +1,4 @@
-/* Black Gold Desk — obsidian, champagne gold, one restrained cyan accent. */
+/* Trading HQ — obsidian, champagne gold, one restrained cyan accent. */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--bg:#05070a;--glass:rgba(13,15,20,.72);--line:rgba(255,255,255,.07);--line2:rgba(217,181,106,.28);--gold:#d9b56a;--gold-hi:#f3dca0;--cyan:#5ef2d6;--up:#3ddc97;--dn:#ff5d73;--txt:#eceef2;--mut:#8a92a1;--mut2:#5d6573;
   --ui:'Chakra Petch',ui-sans-serif,system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
@@ -20,7 +20,7 @@ body.ready #top,body.ready #roster,body.ready #ctrl,body.ready #hint{opacity:1;t
 #splash{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#10141b,#040507 70%);transition:opacity .8s ease,visibility .8s}
 body.ready #splash{opacity:0;visibility:hidden}
 .sp{display:flex;flex-direction:column;align-items:center;gap:10px}
-.sp .logo{width:54px;height:54px;filter:drop-shadow(0 0 18px rgba(217,181,106,.35));animation:breathe 2.4s ease-in-out infinite}
+/*nologo*/.sp .x{width:54px;height:54px;filter:drop-shadow(0 0 18px rgba(217,181,106,.35));animation:breathe 2.4s ease-in-out infinite}
 .sp b{font:700 18px var(--ui);letter-spacing:.42em;margin-right:-.42em;color:var(--txt)}
 .sp span{font:500 10px var(--mono);letter-spacing:.3em;color:var(--mut)}
 .sp i{display:block;width:180px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-top:6px}
@@ -30,10 +30,6 @@ body.ready #splash{opacity:0;visibility:hidden}
 /* top bar */
 #top{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top) + 14px);height:56px;display:flex;align-items:center;gap:16px;pointer-events:none;z-index:10}
 #top>*{pointer-events:auto}
-.brand{display:flex;align-items:center;gap:12px;padding:0 6px}
-.brand .logo{width:34px;height:34px;filter:drop-shadow(0 0 10px rgba(217,181,106,.25))}
-.brand b{display:block;font:700 15px/1 var(--ui);letter-spacing:.32em;color:var(--txt)}
-.brand span{display:block;margin-top:5px;font:500 9px/1 var(--ui);letter-spacing:.26em;color:var(--gold)}
 .nav{margin:0 auto;display:flex;align-items:center;gap:12px;height:44px;padding:0 18px 0 14px;border-radius:999px;background:rgba(10,12,16,.72);border:1px solid var(--line2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 10px 30px -10px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.4)}
 .nav label{color:var(--gold)}
 .nav b{font:700 18px var(--mono);letter-spacing:-.01em;font-variant-numeric:tabular-nums;color:var(--txt)}
@@ -96,19 +92,6 @@ body.ready #ctrl{transform:translateY(-50%)}
 /* world-anchored overlays (crisp at any zoom): sizes are in world pixels */
 #ovl{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .ov{position:absolute;left:0;top:0;transform-origin:0 0}
-#ovBoard{display:flex;flex-direction:column;justify-content:center;padding:6px 12px 6px;color:var(--txt)}
-#ovBoard .bt{display:flex;align-items:center;justify-content:space-between;gap:6px}
-#ovBoard .bt b{font:700 6px/1 var(--ui);letter-spacing:.42em;color:var(--gold);margin-right:-.42em}
-#ovBoard .bt .src{font:500 4.2px/1 var(--mono);letter-spacing:.18em;color:var(--mut)}
-#ovBoard .livetag{font-size:4.2px;gap:2.5px;letter-spacing:.2em}#ovBoard .livetag i{width:2.6px;height:2.6px;animation:none;box-shadow:0 0 3px var(--up)}
-#ovBoard .livetag.stale i{box-shadow:none}
-#bval{margin:3px 0 2px;text-align:center;font:800 27px/1 var(--mono);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:#f6f2ea;text-shadow:0 0 6px rgba(243,220,160,.35),0 0 18px rgba(217,181,106,.18)}
-#bval small{font-size:.58em;font-weight:700;color:#cbbd9c;letter-spacing:-.02em}
-#ovBoard .bm{display:flex;justify-content:space-between;align-items:flex-end;border-top:.4px solid rgba(217,181,106,.28);padding-top:3px}
-#ovBoard .bm label{font-size:3.6px;letter-spacing:.24em;margin-bottom:1.6px}
-#ovBoard .bm b{font:700 6px/1 var(--mono);font-variant-numeric:tabular-nums;color:#d8dbe1}
-#ovBoard .bm .r{text-align:right}#ovBoard .bm .r b{font-weight:500;color:var(--mut)}
-#ovBoard.flash #bval{animation:flash 1.4s ease}
 @keyframes flash{0%{color:var(--gold-hi);text-shadow:0 0 14px rgba(243,220,160,.9)}100%{}}
 .room{display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
 .room b{font:600 4.6px/1 var(--ui);letter-spacing:.5em;margin-right:-.5em;color:rgba(217,181,106,.62)}
@@ -147,8 +130,7 @@ body.ready #ctrl{transform:translateY(-50%)}
 /* compact layouts */
 @media (max-width:999px){
   #top{left:10px;right:10px;top:calc(env(safe-area-inset-top) + 8px);height:44px;gap:8px}
-  .brand .logo{width:28px;height:28px}.brand b{font-size:11px;letter-spacing:.22em}.brand span,.meta,.nav label,.nav em{display:none}
-  .nav{margin:0 0 0 auto;height:36px;padding:0 12px;gap:8px}.nav b{font-size:15px}
+    .nav{margin:0 0 0 auto;height:36px;padding:0 12px;gap:8px}.nav b{font-size:15px}
   #roster{left:10px;right:10px;top:auto;bottom:calc(env(safe-area-inset-bottom) + 10px);width:auto;padding:6px;border-radius:14px}
   .rh,#sys{display:none}
   #menu{flex-direction:row;overflow-x:auto;gap:4px;scrollbar-width:none}#menu::-webkit-scrollbar{display:none}
@@ -164,3 +146,14 @@ body.ready #ctrl{transform:translateY(-50%)}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 .noanim *,.noanim{transition:none!important;animation-duration:0s!important}
+
+/* top bar: NAV · VOLUME · VOL RANK in one capsule */
+#top .nav{gap:0;padding:0 6px}
+.nav .seg{display:flex;align-items:center;gap:10px;height:100%;padding:0 16px;color:inherit;text-decoration:none;position:relative}
+.nav .seg+.seg:before{content:'';position:absolute;left:0;top:11px;bottom:11px;width:1px;background:linear-gradient(180deg,transparent,rgba(217,181,106,.35),transparent)}
+.nav a.seg{border-radius:999px;transition:background .2s}.nav a.seg:hover{background:rgba(217,181,106,.07)}
+.nav .seg b{font-size:16px}.nav .seg:first-child b{font-size:18px}
+#tNav.flash{animation:flash 1.4s ease}
+@media (max-width:999px){#top{justify-content:center}.nav{margin:0 auto!important;padding:0 2px}.nav .seg{padding:0 9px;gap:6px}.nav .seg b{font-size:13px}.nav .seg:first-child b{font-size:14px}.nav .seg .livetag{display:none}}
+@media (max-width:999px){#top .nav{height:42px}.nav .seg{flex-direction:column;justify-content:center;align-items:flex-start;gap:3px}.nav .seg label{display:block!important;font-size:7px;letter-spacing:.18em}.nav .seg em{display:none!important}}
+@media (max-width:999px){.meta{display:none}.nav .seg label{white-space:nowrap}}

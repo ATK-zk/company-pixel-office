@@ -1,4 +1,4 @@
-# Black Gold Desk — Autonomous Trading HQ
+# Autonomous Trading HQ
 
 Live pixel headquarters for our 8-person Polymarket Perps trading desk (David, Rex, Lyra, Kai, Finn, Jay, Quinn, Sage).
 
@@ -19,3 +19,10 @@ Live pixel headquarters for our 8-person Polymarket Perps trading desk (David, R
 `status.json` is the only live input. The read-only equity sync job (`/workspace/office-sync/sync_equity.py`) refreshes it from the trading droplet.
 
 Character sprites and some furniture sprites come from pixel-agents (MIT, see LICENSE-pixel-agents-MIT).
+
+## Top bar: volume & all-time volume rank
+Pulled live in the browser (CORS-open, public, no auth) every 2 min from
+`https://api.perpetuals.polymarket.com/v1/info/leaderboard?window=all&sort_by=notional&limit=1&address=<acct>` —
+the same data behind https://polymarket.com/leaderboard/perps/all/volume. `account.notional` = our all-time volume,
+`account.rank` = our rank, `total` = number of ranked traders. Set our account (owner/EOA) address in
+`status.json` → `leaderboard_account` (kept by the equity sync). Until it is set, VOLUME/RANK show "—" (no invented numbers).

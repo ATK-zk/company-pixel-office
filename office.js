@@ -1,5 +1,5 @@
 'use strict';
-// BLACK GOLD DESK — pixel headquarters of an autonomous Polymarket Perps trading team.
+// Trading HQ — pixel headquarters of an autonomous Polymarket Perps trading team.
 // Read-only view of status.json (team status + REAL account equity). Decorative screens are decorative.
 // Character sprites & a few furniture sprites from pixel-agents (MIT, see LICENSE-pixel-agents-MIT).
 // Everything else (architecture, materials, lighting, props) is drawn procedurally.
@@ -103,6 +103,7 @@ const item = o => (ITEMS.push(o), o);
 const SEATS = {};
 const OWNERS = ['rex', 'david', 'lyra', 'kai', 'finn', 'jay', 'quinn', 'sage'];
 const DESKS = [[14, 5], [18, 5], [24, 5], [28, 5], [14, 11], [18, 11], [24, 11], [28, 11]];
+const HOT = [[14, 17], [18, 17], [24, 17], [28, 17]];
 let people = [];
 const ownerTyping = id => { const p = people.find(q => q.id === id); return !!(p && p.state === 'type'); };
 
@@ -225,23 +226,6 @@ function wallChart(x, y, w, h, z) {
   }, bloom(g) { glow(g, x + w / 2, y + h / 2, w * .6, '#5ef2d6', .08); } });
 }
 
-// --- the centrepiece: NET VALUE display (DOM overlay renders the numbers) ---
-const BOARD = { c: 16, r: 17, w: 14 };
-BOARD.x = BOARD.c * T; BOARD.y = BOARD.r * T + TOPM - 22; BOARD.wpx = BOARD.w * T; BOARD.hpx = 72;
-function boardItem() { const { x, y, wpx: w, hpx: h } = BOARD, fy = (BOARD.r + 5) * T + TOPM - 3;
-  return item({ z: (BOARD.r + 5) * T, block: [BOARD.c, BOARD.r, BOARD.w, 5], shadow: [x + 8, fy - 4, w - 16, 7], lit: [[x, y, w, h]], litOn: () => true,
-    lights: [[x + w / 2, fy + 6, 150, '#ffd58a', .55], [x + w / 2, y + h / 2, 120, '#d9b56a', .35]], draw(g, t) {
-      for (const lx of [x + 34, x + w - 36]) { R(g, lx, y + h, 2, fy - y - h, '#0d0f13'); R(g, lx + .5, y + h, .5, fy - y - h, '#3a3f49'); R(g, lx - 10, fy - 2, 22, 2.5, '#0b0c0f'); R(g, lx - 10, fy - 2, 22, .5, GOLD); }
-      rr(g, x - 4, y - 4, w + 8, h + 8, 3, '#060709'); rr(g, x - 3, y - 3, w + 6, h + 6, 2.5, '#16181d');
-      R(g, x - 2, y - 3.2, w + 4, .5, '#5a606c'); R(g, x - 3, y + h + 2.6, w + 6, .6, GOLD);
-      const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, '#070b10'); gr.addColorStop(1, '#0a0f14'); g.fillStyle = gr; g.fillRect(x, y, w, h);
-      R(g, x, y, w, .5, 'rgba(217,181,106,.55)'); R(g, x, y + h - .5, w, .5, 'rgba(217,181,106,.25)');
-      for (let k = 1; k < 8; k++) R(g, x + k * w / 8, y + 1, .3, h - 2, 'rgba(255,255,255,.018)');
-      const sy = y + ((t * 12) % h); g.fillStyle = 'rgba(94,242,214,.04)'; g.fillRect(x, sy, w, 3);
-      g.fillStyle = 'rgba(217,181,106,.8)'; for (const [cx, cy, sx, sy2] of [[x + 2, y + 2, 1, 1], [x + w - 2, y + 2, -1, 1], [x + 2, y + h - 2, 1, -1], [x + w - 2, y + h - 2, -1, -1]]) { g.fillRect(Math.min(cx, cx + sx * 6), cy, 6, .5); g.fillRect(cx, Math.min(cy, cy + sy2 * 6), .5, 6); }
-      g.save(); g.globalAlpha = .05; g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w * .38, y); g.lineTo(x + w * .2, y + h); g.lineTo(x, y + h); g.fill(); g.restore();
-    }, bloom(g, t) { glow(g, x + w / 2, y + h / 2, w * .62, '#d9b56a', .06 + .02 * Math.sin(t * 1.3)); } }); }
-
 // --- exec bar ---
 function barCounter() { const x = 1 * T, y = 2 * T + TOPM, w = 7 * T;
   return item({ z: 4 * T, block: [1, 2, 7, 2], shadow: [x, y + 26, w, 6], draw(g) {
@@ -325,7 +309,9 @@ function sideTable(c, r) { const cx = c * T + 8, cy = r * T + TOPM + 9;
 DESKS.forEach(([c, r], i) => { workstation(c, r, OWNERS[i], i); chair(c + 1, r + 2); SEATS[OWNERS[i]] = { c: c + 1, r: r + 2 }; });
 plant2(22, 5); plant2(22, 11); plant(13, 16); plant(32, 16);
 bigPlant(13, 25); bigPlant(31, 25);
-boardItem();
+// centre of the floor: a third row of hot desks (always-on market screens), mirrored on the rows above
+for (const [c, r] of HOT) { workstation(c, r, null, 2 + c % 5, { always: 1 }); chair(c + 1, r + 2); }
+plant2(22, 17);
 bench(18, 24, 4); bench(25, 24, 4);
 wallChart(20 * T + 6, TOPM - 13, 6 * T - 12, 22, T + .4);
 roundTable(30, 19); sprite('COFFEE', 30, 18, { z: 20 * T + .1, dy: 3 });
@@ -357,7 +343,7 @@ bigPlant(42, 25); plant(34, 16);
 
 // static light rig (warm downlights + window wash)
 const LIGHTS = [];
-DESKS.forEach(([c, r]) => LIGHTS.push([c * T + 24, r * T + TOPM + 26, 58, '#ffe6c4', .62]));
+[...DESKS, ...HOT].forEach(([c, r]) => LIGHTS.push([c * T + 24, r * T + TOPM + 26, 58, '#ffe6c4', .62]));
 for (let x = 14 * T; x <= 32 * T; x += 48) LIGHTS.push([x, TOPM + 22, 46, '#9cc3ff', .42]);
 LIGHTS.push([20 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [27 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [23 * T, 15 * T + TOPM, 60, '#ffe6c4', .3]);
 LIGHTS.push([30 * T + 8, 19 * T + TOPM, 40, '#ffd29a', .5], [14 * T, 20 * T + TOPM, 50, '#ffe6c4', .35], [31 * T, 22 * T + TOPM, 50, '#ffe6c4', .35]);
@@ -635,20 +621,18 @@ function bubbleTick(dt) { clock += dt;
 
 const money = v => '$' + Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 let navShown = null, navAnim = null;
-function setNav(v) { if (!isFinite(v)) { $('bval').textContent = '—'; $('tNav').textContent = '—'; return; }
+function setNav(v) { if (!isFinite(v)) { $('tNav').textContent = '—'; return; }
   if (navShown != null && Math.abs(navShown - v) < .001) return;
-  if (navShown != null) { const b = $('ovBoard'); b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); }
+  if (navShown != null) { const b = $('tNav'); b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); }
   navAnim = { from: navShown == null ? v * .992 : navShown, to: v, k: 0 }; }
 function navStep(dt) { if (!navAnim) return; navAnim.k = Math.min(1, navAnim.k + dt / 1.8); const e = 1 - Math.pow(1 - navAnim.k, 4); navShown = navAnim.from + (navAnim.to - navAnim.from) * e;
-  const s = money(navShown), [i, d] = s.split('.'); $('bval').innerHTML = `${i}<small>.${d}</small>`; $('tNav').textContent = s; if (navAnim.k >= 1) navAnim = null; }
+  $('tNav').textContent = money(navShown); if (navAnim.k >= 1) navAnim = null; }
 function parseIct(s) { const m = /(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)/.exec(s || ''); return m ? Date.UTC(+m[1], m[2] - 1, +m[3], m[4] - 7, +m[5]) : NaN; }
 function refreshBoard() { const nv = STATUS.net_value || {}; const v = Number(nv.usd), d = Number(nv.day_pnl_usd);
   setNav(v);
   const ok = isFinite(d), ds = ok ? (d > 0 ? '+' : d < 0 ? '−' : '') + money(d) : '—', dc = d > 0 ? 'up' : d < 0 ? 'dn' : '';
-  $('bday').textContent = ds; $('bday').className = dc; $('tDay').textContent = ok ? ds + ' today' : ''; $('tDay').className = dc;
-  const pct = ok && isFinite(v) && v - d ? d / (v - d) * 100 : NaN; $('bpct').textContent = isFinite(pct) ? (pct > 0 ? '+' : pct < 0 ? '−' : '') + Math.abs(pct).toFixed(2) + '%' : ''; $('bpct').className = dc;
+  $('tDay').textContent = ok ? ds + ' today' : ''; $('tDay').className = dc;
   const asOf = nv.as_of || STATUS.updated || ''; const age = (Date.now() - parseIct(asOf)) / 60000; const live = isFinite(age) && age < 90;
-  $('basof').textContent = asOf ? asOf.slice(5, 16).replace('-', '/') + ' ICT' : 'AWAITING SYNC';
   for (const el of document.querySelectorAll('.livetag')) { el.classList.toggle('stale', !live); el.querySelector('em').textContent = live ? 'LIVE' : 'LAST SYNC'; }
   $('syncT').textContent = asOf ? asOf.slice(11, 16) + ' ICT' : '—'; }
 function refreshHUD() { refreshBoard(); let n = 0;
@@ -657,7 +641,18 @@ function refreshHUD() { refreshBoard(); let n = 0;
   $('wcount').innerHTML = `<b>${n}</b> / ${people.length} ACTIVE`;
   $('sys').innerHTML = (STATUS.systems || []).map(s => `<span class="${s.ok ? 'ok' : 'bad'}"><i></i>${esc(s.name)}</span>`).join('');
   showCard(); }
-async function poll() { try { const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); STATUS.team = j.team || {}; STATUS.systems = j.systems; STATUS.updated = j.updated; STATUS.net_value = j.net_value; } } catch (e) { } refreshHUD(); }
+// ---------- all-time volume ranking (public Polymarket Perps leaderboard, same data as polymarket.com/leaderboard/perps/all/volume) ----------
+const LB_API = 'https://api.perpetuals.polymarket.com/v1/info/leaderboard?window=all&sort_by=notional&limit=1';
+const compact = v => { const a = Math.abs(v); return '$' + (a >= 1e9 ? (a / 1e9).toFixed(2) + 'B' : a >= 1e6 ? (a / 1e6).toFixed(2) + 'M' : a >= 1e4 ? (a / 1e3).toFixed(1) + 'K' : a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); };
+async function pollRank() { const q = new URLSearchParams(location.search), addr = (q.get('addr') || STATUS.account || '').trim();
+  try { const r = await fetch(LB_API + (/^0x[0-9a-fA-F]{40}$/.test(addr) ? '&address=' + addr : ''), { cache: 'no-store' }); if (!r.ok) return; const j = await r.json();
+    const tot = Number(j.total), me = j.account || null, vol = me ? Number(me.notional) : NaN, rk = me && me.rank != null ? Number(me.rank) : NaN;
+    $('tVol').textContent = isFinite(vol) ? compact(vol) : '—';
+    $('tRank').textContent = isFinite(rk) ? '#' + rk.toLocaleString('en-US') : '—';
+    $('tOf').textContent = isFinite(tot) ? 'of ' + tot.toLocaleString('en-US') : '';
+    $('rankBox').title = me ? 'All-time perps volume rank · Polymarket leaderboard' : 'Account address not linked yet — set leaderboard_account in status.json';
+  } catch (e) { } }
+async function poll() { try { const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); STATUS.team = j.team || {}; STATUS.systems = j.systems; STATUS.updated = j.updated; STATUS.net_value = j.net_value; STATUS.account = j.leaderboard_account || ''; } } catch (e) { } refreshHUD(); }
 function tickClock() { $('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }); }
 
 // ---------- main ----------
@@ -672,8 +667,7 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
   try { await loadAll(k => { $('spbar').style.width = Math.round(k * 100) + '%'; }); }
   catch (e) { $('spmsg').textContent = 'ASSET LOAD FAILED — PLEASE REFRESH'; return; }
   buildBlocked(); buildRoam(); bakeFloor(); bakeSky(); bakeLight(); buildHUD();
-  const bo = $('ovBoard'); bo.style.width = BOARD.wpx + 'px'; bo.style.height = BOARD.hpx + 'px'; OV.push({ el: bo, wx: BOARD.x, wy: BOARD.y });
-  await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000);
+  await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000); pollRank(); setInterval(pollRank, 120000);
   const f = fitTarget(); const q = new URLSearchParams(location.search); if (q.has('shot')) document.body.classList.add('noanim'); if (q.has('cx')) { const z = +q.get('z') || 3; Object.assign(f, { z, x: innerWidth / 2 - (+q.get('cx')) * T * z, y: innerHeight / 2 - ((+q.get('cy')) * T + TOPM) * z }); } Object.assign(cam, { z: f.z * .86, x: f.x + W * f.z * .07, y: f.y + H * f.z * .07 });
   requestAnimationFrame(frame);
   if (q.has('shot')) { Object.assign(cam, f); document.body.classList.add('ready'); }
