@@ -14,8 +14,8 @@ const TEAM = [
   { id: 'kai', name: 'Kai', role_en: 'Risk', pal: 3, hue: 0, color: '#ff7a85' },
   { id: 'finn', name: 'Finn', role_en: 'Execution', pal: 4, hue: 0, color: '#ffb35c' },
   { id: 'jay', name: 'Jay', role_en: 'Desk Operations', pal: 5, hue: 0, color: '#8fb4ff' },
-  { id: 'quinn', name: 'Quinn', role_en: 'Product & QA', pal: 1, hue: 150, color: '#6fe3a5' },
-  { id: 'sage', name: 'Sage', role_en: 'Infrastructure', pal: 3, hue: 200, color: '#9fd0e0' },
+  { id: 'quinn', name: 'Quinn', role_en: 'Product & QA', pal: 6, hue: 0, color: '#6fe3a5' },
+  { id: 'sage', name: 'Sage', role_en: 'Infrastructure', pal: 7, hue: 0, color: '#9fd0e0' },
 ];
 
 // cute, short speech lines (English only)
@@ -85,7 +85,7 @@ const CHARS = {};
 async function loadAll(progress) {
   const jobs = []; let done = 0; let total = 1; const tick = () => progress(++done / total);
   for (const [k, p] of Object.entries(SPRITES)) jobs.push(loadImg(A + 'furniture/' + p + '.png').then(i => { IMG[k] = TINT[k] ? colorize(i, TINT[k]) : toCanvas(i); tick(); }));
-  const chImgs = []; for (let i = 0; i < 6; i++) jobs.push(loadImg(A + `characters/char_${i}.png`).then(im => { chImgs[i] = im; tick(); }));
+  const chImgs = []; for (let i = 0; i < 8; i++) jobs.push(loadImg(A + `characters/char_${i}.png`).then(im => { chImgs[i] = im; tick(); }));
   total = jobs.length + 1;
   jobs.push((document.fonts ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]) : Promise.resolve()).then(tick));
   await Promise.all(jobs);
