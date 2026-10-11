@@ -689,3 +689,10 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
   else setTimeout(() => { document.body.classList.add('ready'); const g = q.has('cx') ? f : fitTarget(); glide(g.z, g.x, g.y, 1.8); }, Math.max(150, 800 - (performance.now() - t0)));
   setTimeout(() => $('hint').classList.add('gone'), 9000);
 })();
+
+// ---------- zoom controls hide/show (remembered per browser) ----------
+(function () { const nav = document.getElementById('ctrl'), b = document.getElementById('ztog'); if (!nav || !b) return;
+  const apply = h => { nav.classList.toggle('zhide', h); const t = h ? 'Show zoom controls' : 'Hide zoom controls'; b.title = t; b.setAttribute('aria-label', t); b.setAttribute('aria-expanded', String(!h));
+    try { localStorage.setItem('pxo.zoomHidden', h ? '1' : '0'); } catch (e) { } if (typeof layoutHUD === 'function') try { layoutHUD(); } catch (e) { } };
+  let h = false; try { h = localStorage.getItem('pxo.zoomHidden') === '1'; } catch (e) { }
+  apply(h); b.addEventListener('click', e => { e.stopPropagation(); apply(!nav.classList.contains('zhide')); }); })();
