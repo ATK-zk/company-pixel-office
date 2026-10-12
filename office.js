@@ -7,27 +7,24 @@ const T = 16, COLS = 46, ROWS = 30, TOPM = 40, S = 2;
 const W = COLS * T, H = ROWS * T + TOPM;
 const A = 'assets/';
 
+// Six-person desk. ids match status.json → team. Sprites are six different pixel-agents sheets.
 const TEAM = [
-  { id: 'david', name: 'David', role_en: 'Chief Executive', pal: 0, hue: 0, color: '#d9b56a' },
-  { id: 'rex', name: 'Rex', role_en: 'Market Data', pal: 1, hue: 0, color: '#5ef2d6' },
-  { id: 'lyra', name: 'Lyra', role_en: 'Quant Research', pal: 2, hue: 0, color: '#c79bff' },
-  { id: 'kai', name: 'Kai', role_en: 'Risk', pal: 3, hue: 0, color: '#ff7a85' },
-  { id: 'finn', name: 'Finn', role_en: 'Execution', pal: 4, hue: 0, color: '#ffb35c' },
-  { id: 'jay', name: 'Jay', role_en: 'Desk Operations', pal: 5, hue: 0, color: '#8fb4ff' },
-  { id: 'quinn', name: 'Quinn', role_en: 'Product & QA', pal: 6, hue: 0, color: '#6fe3a5' },
-  { id: 'sage', name: 'Sage', role_en: 'Infrastructure', pal: 7, hue: 0, color: '#9fd0e0' },
+  { id: 'lead', name: 'Desk Lead', role_en: 'Team lead', blurb: 'The only one who talks to the CEO.', pal: 0, color: '#e2b657' },
+  { id: 'quant', name: 'Quant', role_en: 'Strategy & engine', blurb: 'Writes and deploys strategy and engine code.', pal: 1, color: '#5ef2d6' },
+  { id: 'critic', name: 'Critic', role_en: 'Code review', blurb: 'Reviews code and approves file hashes.', pal: 2, color: '#c79bff' },
+  { id: 'risk', name: 'Risk Watch', role_en: 'Health & loss cap', blurb: 'Monitors health checks and the 15% daily loss cap.', pal: 3, color: '#ff7a85' },
+  { id: 'scout', name: 'Scout', role_en: 'Trading ideas', blurb: 'Finds trading ideas.', pal: 4, color: '#ffb35c' },
+  { id: 'ops', name: 'Ops', role_en: 'Ledger & reports', blurb: 'Ledger, the daily 07:30 report, and expected vs actual.', pal: 5, color: '#8fb4ff' },
 ];
 
-// cute, short speech lines (English only)
+// short ambient lines (English only). The live task is shown on the card and on select.
 const LINES = {
-  david: { work: ['ship it, team!', 'big picture mode', 'all systems go?', 'coffee = strategy'], idle: ['thinking like a CEO...', 'vision board time', 'who moved my chart?'] },
-  rex:   { work: ['fetching ticks...', 'OI looks spicy', 'funding check: ok', 'klines go brrr'], idle: ['feed is quiet...', 'waiting on candles'] },
-  lyra:  { work: ['momentum + OI <3', 'signal brewing...', 'regime: choppy?', 'backtest says hmm'], idle: ['dreaming of alpha', 'z-score nap time'] },
-  kai:   { work: ['risk caps armed', '$20 a day. no more!', 'kill switch ready'], idle: ['guarding the vault', 'no YOLO allowed', 'all limits green'] },
-  finn:  { work: ['post-only, please', 'adapter humming...', 'dead-man re-armed', 'fees counted'], idle: ['finger off the trigger', 'patience pays'] },
-  jay:   { work: ['heartbeat ok <3', 'checklist 7/10...', 'eyes on the desk'], idle: ['daily report soon', 'ops snack break', 'all quiet on deck'] },
-  quinn: { work: ['QA gate check', 'roadmap tweaks...', 'metrics look neat'], idle: ['waiting for PnL', 'sprint 2 ideas!', 'test, test, test'] },
-  sage:  { work: ['poller alive', 'uptime 99.9% B)', 'logs look clean'], idle: ['sudo make coffee', 'watching the droplet', 'zero alerts, nice'] },
+  lead:   { work: ['v3 install, together', 'go-live needs a yes', 'I will brief the CEO', 'hold steady, desk'], idle: ['line to the CEO is quiet', 'waiting on a decision'] },
+  quant:  { work: ['DRY_RUN, deploying…', 'engine code landing', 'v3 bits on the box', 'strategy compiling'], idle: ['no live orders yet', 'backtests in my head'] },
+  critic: { work: ['checking the hashes', 'manifest, line by line', 'no unsigned files', 'this diff is clean'], idle: ['red pen is capped', 'waiting on a build'] },
+  risk:   { work: ['15% cap is armed', 'heartbeat looks good', 'health checks green'], idle: ['waiting on heartbeat', 'loss cap stays 15%', 'no pulse yet… zzz'] },
+  scout:  { work: ['idea net is open', 'scanning for a setup'], idle: ['ideas on hold', 'back when we are live', 'notebook stays shut'] },
+  ops:    { work: ['ledger is current', '07:30 report staged', 'expected vs actual', 'refreshing the office'], idle: ['report clock is 07:30', 'books can wait'] },
 };
 
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -53,6 +50,28 @@ function ell(g, cx, cy, rx, ry, col) { g.fillStyle = col; g.beginPath(); g.ellip
 function glow(g, x, y, r, col, a) { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, hexA(col, a)); gr.addColorStop(1, hexA(col, 0)); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
 function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
 const GOLD = '#c9a35c', GOLD_HI = '#f0d9a0', BRASS_D = '#7a5f32';
+
+// Bangkok local time drives the skyline. Interior stays obsidian; the windows and a window-wash carry the hour.
+const SKY = {
+  night: { top: '#070b18', mid: '#151532', bot: '#2a1c38', far: '#131a2c', near: '#0a0d18', star: .55, winOn: 1, antenna: true, winWarm: 'rgba(255,207,122,.9)', winCool: 'rgba(159,216,255,.85)', ambient: '#68707f', lamp: 1.08, wash: '#6e8ec4', washA: .2, moon: true, sun: '#fff6c2' },
+  dawn:  { top: '#4a3a62', mid: '#e08a78', bot: '#f6c9a4', far: '#8a6a78', near: '#4a3848', star: .14, winOn: .32, antenna: false, winWarm: 'rgba(255,207,122,.75)', winCool: 'rgba(159,216,255,.4)', ambient: '#7c756e', lamp: 1, wash: '#ffbfa0', washA: .42, moon: false, sun: '#ffe0b0' },
+  day:   { top: '#6aabe6', mid: '#b7d6f6', bot: '#e8f3fc', far: '#93a8be', near: '#5c7086', star: 0, winOn: .04, antenna: false, winWarm: 'rgba(255,244,220,.5)', winCool: 'rgba(210,230,255,.35)', ambient: '#848c9c', lamp: .92, wash: '#fff1d6', washA: .62, moon: false, sun: '#fff6c2' },
+  dusk:  { top: '#2c2450', mid: '#d15a48', bot: '#f0a36a', far: '#6a4558', near: '#3a2434', star: .16, winOn: .7, antenna: true, winWarm: 'rgba(255,196,120,.9)', winCool: 'rgba(180,200,255,.55)', ambient: '#756c78', lamp: 1.02, wash: '#ff9a70', washA: .38, moon: false, sun: '#ffd0a0' },
+};
+let bkkT = 14, phase = 'day';
+function bangkokNow() {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date());
+  const h = Number(parts.find(p => p.type === 'hour').value);
+  const m = Number(parts.find(p => p.type === 'minute').value);
+  return { h, m, t: h + m / 60, label: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') };
+}
+function phaseOf(t) {
+  if (t >= 5.25 && t < 7) return 'dawn';
+  if (t >= 7 && t < 17.25) return 'day';
+  if (t >= 17.25 && t < 19.25) return 'dusk';
+  return 'night';
+}
+function readPhase() { const bk = bangkokNow(); bkkT = bk.t; phase = phaseOf(bk.t); return bk; }
 
 // ---------- sprites ----------
 const SPRITES = {
@@ -85,7 +104,7 @@ const CHARS = {};
 async function loadAll(progress) {
   const jobs = []; let done = 0; let total = 1; const tick = () => progress(++done / total);
   for (const [k, p] of Object.entries(SPRITES)) jobs.push(loadImg(A + 'furniture/' + p + '.png').then(i => { IMG[k] = TINT[k] ? colorize(i, TINT[k]) : toCanvas(i); tick(); }));
-  const chImgs = []; for (let i = 0; i < 8; i++) jobs.push(loadImg(A + `characters/char_${i}.png`).then(im => { chImgs[i] = im; tick(); }));
+  const chImgs = []; for (const i of [...new Set(TEAM.map(m => m.pal))]) jobs.push(loadImg(A + `characters/char_${i}.png`).then(im => { chImgs[i] = im; tick(); }));
   total = jobs.length + 1;
   jobs.push((document.fonts ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]) : Promise.resolve()).then(tick));
   await Promise.all(jobs);
@@ -101,8 +120,9 @@ async function loadAll(progress) {
 const ITEMS = [];
 const item = o => (ITEMS.push(o), o);
 const SEATS = {};
-const OWNERS = ['rex', 'david', 'lyra', 'kai', 'finn', 'jay', 'quinn', 'sage'];
-const DESKS = [[14, 5], [18, 5], [24, 5], [28, 5], [14, 11], [18, 11], [24, 11], [28, 11]];
+const OWNERS = TEAM.map(m => m.id);
+// two rows of three, with a walkway between — one desk per deskmate
+const DESKS = [[14, 4], [20, 4], [26, 4], [14, 10], [20, 10], [26, 10]];
 let people = [];
 const ownerTyping = id => { const p = people.find(q => q.id === id); return !!(p && p.state === 'type'); };
 
@@ -306,7 +326,7 @@ function sideTable(c, r) { const cx = c * T + 8, cy = r * T + TOPM + 9;
 
 // ---------- build the scene ----------
 DESKS.forEach(([c, r], i) => { workstation(c, r, OWNERS[i], i); chair(c + 1, r + 2); SEATS[OWNERS[i]] = { c: c + 1, r: r + 2 }; });
-plant2(22, 5); plant2(22, 11); plant(13, 16); plant(32, 16);
+plant2(18, 7); plant2(24, 7); plant(31, 6); plant(13, 16); plant(32, 16);
 bigPlant(13, 25); bigPlant(31, 25);
 // centre of the floor: exactly one desk per teammate above; below, a client lounge instead of spare desks
 sprite('SOFA_F', 22, 18, { block: [22, 18, 2, 1], z: 19 * T }); sprite('SOFA_S', 21, 19, { block: [21, 19, 1, 2], z: 21 * T });
@@ -345,7 +365,7 @@ bigPlant(42, 25); plant(34, 16);
 // static light rig (warm downlights + window wash)
 const LIGHTS = [];
 DESKS.forEach(([c, r]) => LIGHTS.push([c * T + 24, r * T + TOPM + 26, 58, '#ffe6c4', .62]));
-for (let x = 14 * T; x <= 32 * T; x += 48) LIGHTS.push([x, TOPM + 22, 46, '#9cc3ff', .42]);
+for (let x = 14 * T; x <= 32 * T; x += 48) LIGHTS.push([x, TOPM + 22, 52, '#fff1d6', .5, 'wash']);
 LIGHTS.push([23 * T, 20 * T + TOPM, 70, '#ffe6c4', .55], [20 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [27 * T, 25 * T + TOPM, 72, '#ffe6c4', .45], [23 * T, 15 * T + TOPM, 60, '#ffe6c4', .3]);
 LIGHTS.push([30 * T + 8, 19 * T + TOPM, 40, '#ffd29a', .5], [14 * T, 20 * T + TOPM, 50, '#ffe6c4', .35], [31 * T, 22 * T + TOPM, 50, '#ffe6c4', .35]);
 LIGHTS.push([4 * T, 4 * T + TOPM, 64, '#ffcf8a', .75], [6 * T, 13 * T + TOPM, 50, '#ffcf8a', .4]);
@@ -474,21 +494,66 @@ function bakeFloor() {
 }
 const WINDOWS = []; for (let c = 13; c <= 32; c++) WINDOWS.push([c * T, TOPM, T, T]);
 function bakeLight() {
-  const g = lightStatic.getContext('2d'); g.clearRect(0, 0, W, H); g.save(); g.beginPath(); g.rect(0, TOPM - 16, W, ROWS * T + 16); g.clip();
-  g.fillStyle = AMBIENT; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
-  for (const [x, y, r, col, a] of LIGHTS) glow(g, x, y, r, col, a);
-  for (const it of ITEMS) if (it.lights && !it.litOn) for (const [x, y, r, col, a] of it.lights) glow(g, x, y, r, col, a);
+  const g = lightStatic.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H); g.save(); g.beginPath(); g.rect(0, TOPM - 16, W, ROWS * T + 16); g.clip();
+  const pal = SKY[phase] || SKY.night;
+  g.fillStyle = pal.ambient || AMBIENT; g.fillRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
+  for (const [x, y, r, col, a, kind] of LIGHTS) glow(g, x, y, r, kind === 'wash' ? pal.wash : col, kind === 'wash' ? pal.washA : a * pal.lamp);
+  for (const it of ITEMS) if (it.lights && !it.litOn) for (const [x, y, r, col, a] of it.lights) glow(g, x, y, r, col, a * pal.lamp);
   g.fillStyle = '#fff'; for (const [x, y, w, h] of WINDOWS) g.fillRect(x, y, w, h);
   g.restore();
 }
 const sky = [mk(480 * S, 16 * S), mk(480 * S, 16 * S)];
-function bakeSky() { const rnd = mulberry(99);
-  sky.forEach((cv, li) => { const g = cv.getContext('2d'); g.setTransform(S, 0, 0, S, 0, 0);
-    if (li === 0) { const gr = g.createLinearGradient(0, 0, 0, 16); gr.addColorStop(0, '#070b18'); gr.addColorStop(.7, '#151532'); gr.addColorStop(1, '#2a1c38'); g.fillStyle = gr; g.fillRect(0, 0, 480, 16);
-      for (let k = 0; k < 40; k++) R(g, rnd() * 480, rnd() * 6, .5, .5, 'rgba(255,255,255,.5)'); }
-    let x = 0; while (x < 480) { const bw = 4 + rnd() * (li ? 12 : 8), bh = li ? 5 + rnd() * 9 : 3 + rnd() * 7; R(g, x, 16 - bh, bw, bh, li ? '#0a0d18' : '#131a2c');
-      if (li) for (let wy = 16 - bh + 1; wy < 15.5; wy += 1.5) for (let wx = x + 1; wx < x + bw - 1; wx += 1.5) if (rnd() < .28) R(g, wx, wy, .6, .6, rnd() < .75 ? 'rgba(255,207,122,.85)' : 'rgba(159,216,255,.8)');
-      if (li && bh > 12 && rnd() < .5) R(g, x + bw / 2, 16 - bh - 1.5, .6, 1.5, '#ff4d5e'); x += bw + (li ? rnd() * 3 : 0); } }); }
+let skylineBuilt = false;
+const SKYLINE = [[], []], STARS = [];
+function ensureSkyline() {
+  if (skylineBuilt) return;
+  skylineBuilt = true;
+  const rnd = mulberry(99);
+  for (let k = 0; k < 40; k++) STARS.push([rnd() * 480, rnd() * 6]);
+  for (let li = 0; li < 2; li++) {
+    let x = 0;
+    while (x < 480) {
+      const bw = 4 + rnd() * (li ? 12 : 8), bh = li ? 5 + rnd() * 9 : 3 + rnd() * 7, wins = [];
+      if (li) for (let wy = 16 - bh + 1; wy < 15.5; wy += 1.5) for (let wx = x + 1; wx < x + bw - 1; wx += 1.5) if (rnd() < .28) wins.push([wx, wy, rnd()]);
+      const ant = !!(li && bh > 12 && rnd() < .5);
+      SKYLINE[li].push({ x, bw, bh, wins, ant });
+      x += bw + (li ? rnd() * 3 : 0);
+    }
+  }
+}
+function paintSkyBody(g, pal) {
+  if (pal.moon) {
+    const span = (24 - 19.25) + 5.25;
+    const u = Math.max(0, Math.min(1, bkkT >= 19.25 ? (bkkT - 19.25) / span : (bkkT + (24 - 19.25)) / span));
+    const x = 28 + u * 420, y = 3.2;
+    R(g, x, y, 4, 4, '#e7eefc'); R(g, x + 2, y, 2, 3, pal.top); R(g, x + 1, y + 1, 1, 1, '#ffffff');
+    return;
+  }
+  const u = Math.max(0, Math.min(1, (bkkT - 5.25) / 14));
+  const x = 24 + u * 430, y = 8.2 - Math.sin(u * Math.PI) * 5.5;
+  R(g, x - 2, y + 1, 7, 1, pal.sun); R(g, x, y - 1, 3, 5, pal.sun); R(g, x + 1, y + 1, 1, 1, '#fffef6');
+}
+function bakeSky() {
+  ensureSkyline();
+  const pal = SKY[phase] || SKY.night;
+  sky.forEach((cv, li) => {
+    const g = cv.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height);
+    g.setTransform(S, 0, 0, S, 0, 0);
+    if (li === 0) {
+      const gr = g.createLinearGradient(0, 0, 0, 16);
+      gr.addColorStop(0, pal.top); gr.addColorStop(.62, pal.mid); gr.addColorStop(1, pal.bot);
+      g.fillStyle = gr; g.fillRect(0, 0, 480, 16);
+      if (pal.star) { g.fillStyle = `rgba(255,255,255,${pal.star})`; for (const [sx, sy] of STARS) g.fillRect(sx, sy, .5, .5); }
+      paintSkyBody(g, pal);
+    }
+    for (const b of SKYLINE[li]) {
+      R(g, b.x, 16 - b.bh, b.bw, b.bh, li ? pal.near : pal.far);
+      if (li) for (const [wx, wy, rv] of b.wins) if (rv < pal.winOn) R(g, wx, wy, .6, .6, rv < pal.winOn * .72 ? pal.winWarm : pal.winCool);
+      if (b.ant && pal.antenna) R(g, b.x + b.bw / 2, 16 - b.bh - 1.5, .6, 1.5, '#ff4d5e');
+    }
+  });
+}
 
 // ---------- rendering ----------
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
@@ -527,8 +592,11 @@ function render(t) {
   for (const p of people) { const s = spriteOf(p), off = p.state === 'type' ? 6 : 0, sx = Math.round(p.x - 8), sy = Math.round(p.y + off - 32 + TOPM);
     dr.push({ z: p.y + 8.5, f: () => {
       if (p.state !== 'type') ell(wg, p.x, p.y + 7 + TOPM, 5, 2, 'rgba(0,0,0,.4)');
-      if (p === sel) { if (!off) ell(wg, p.x, p.y + 7 + TOPM, 7, 2.6, hexA(p.color, .4)); outline(s, sx, sy); }
-      wg.drawImage(s, sx, sy); } }); }
+      if (p === sel) { if (!off) ell(wg, p.x, p.y + 7 + TOPM, 7, 2.6, hexA(p.color, .55)); outline(s, sx, sy); }
+      else if (p === hov) outlineColored(s, sx, sy, p.color);
+      wg.drawImage(s, sx, sy);
+      if (!working(p) && p.state !== 'walk') drawZzz(wg, p.x + 4, sy, t + p.c);
+    } }); }
   dr.sort((a, b) => a.z - b.z); for (const d of dr) d.f();
   lg.globalCompositeOperation = 'source-over'; lg.clearRect(0, 0, W, H); lg.drawImage(lightStatic, 0, 0);
   lg.save(); lg.beginPath(); lg.rect(0, TOPM - 16, W, ROWS * T + 16); lg.clip(); lg.globalCompositeOperation = 'lighter';
@@ -537,7 +605,9 @@ function render(t) {
   lg.restore();
   wg.save(); wg.globalCompositeOperation = 'multiply'; wg.imageSmoothingEnabled = true; wg.drawImage(lightDyn, 0, 0, W, H); wg.restore();
   wg.save(); wg.globalCompositeOperation = 'lighter'; for (const it of ITEMS) if (it.bloom) it.bloom(wg, t);
+  for (const p of people) if (working(p) && p.state !== 'walk') glow(wg, p.x, p.y + TOPM - 8, 18, p.color, .16 + .1 * Math.sin(t * 3.1 + p.c));
   for (const d of dust) { const a = .08 + .08 * Math.sin(t * d.s + d.p); R(wg, d.x + Math.sin(t * .2 + d.p) * 6, d.y + ((t * d.v) % 40) - 20, .6, .6, `rgba(255,236,200,${a})`); }
+  drawSteam(wg, t);
   wg.restore();
   ctx.setTransform(1, 0, 0, 1, 0, 0); drawVoid();
   ctx.setTransform(cam.z * dpr, 0, 0, cam.z * dpr, cam.x * dpr, cam.y * dpr);
@@ -557,6 +627,29 @@ const outCache = new Map();
 function outline(s, x, y) { let o = outCache.get(s); if (!o) { o = mk(18, 34); const g = o.getContext('2d');
     for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) g.drawImage(s, dx, dy); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#f0d9a0'; g.fillRect(0, 0, 18, 34); outCache.set(s, o); }
   wg.drawImage(o, x - 1, y - 1); }
+const tintCache = new Map();
+function outlineColored(s, x, y, col) {
+  let m = tintCache.get(s); if (!m) { m = new Map(); tintCache.set(s, m); }
+  let o = m.get(col); if (!o) { o = mk(18, 34); const g = o.getContext('2d');
+    for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) g.drawImage(s, dx, dy); g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, 18, 34); m.set(col, o); }
+  wg.drawImage(o, x - 1, y - 1);
+}
+const STEAM = [[1 * T + 12, 2 * T + TOPM - 6], [22 * T + 16, 19 * T + TOPM + 4], [38 * T + 16, 20 * T + TOPM + 4]];
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function drawZzz(g, x, y, t) {
+  for (let i = 0; i < 3; i++) {
+    const ph = reduceMotion ? .2 + i * .2 : (t * .42 + i * .28) % 1;
+    const yy = Math.round(y - 8 - ph * 11), xx = Math.round(x + i * 3.5), a = reduceMotion ? .8 : (1 - ph) * .92;
+    g.fillStyle = `rgba(226,232,242,${a})`;
+    g.fillRect(xx, yy, 3, 1); g.fillRect(xx + 2, yy + 1, 1, 1); g.fillRect(xx + 1, yy + 2, 1, 1); g.fillRect(xx, yy + 3, 3, 1);
+  }
+}
+function drawSteam(g, t) {
+  for (const [x, y] of STEAM) for (let k = 0; k < 3; k++) {
+    const ph = reduceMotion ? .3 + k * .2 : (t * .32 + k * .34 + x * .01) % 1;
+    R(g, Math.round(x + Math.sin(t * 1.4 + k) * 1.4), Math.round(y - ph * 12), 2, 2, `rgba(236,242,246,${(1 - ph) * .32})`);
+  }
+}
 
 // ---------- camera ----------
 let dpr = 1; const cam = { x: 0, y: 0, z: 1 };
@@ -611,15 +704,26 @@ $('zreset').onclick = () => { select(null); fitSmooth(); };
 addEventListener('keydown', e => { if (e.key === '+' || e.key === '=') $('zin').click(); else if (e.key === '-') $('zout').click(); else if (e.key === '0' || e.key === 'Escape') { select(null); fitSmooth(); } });
 function pick(sx, sy) { const [wx, wy] = toWorld(sx, sy); let best = null; for (const p of people) { const off = p.state === 'type' ? 6 : 0; if (wx >= p.x - 8 && wx <= p.x + 8 && wy >= p.y + off - 26 && wy <= p.y + off + 4) if (!best || p.y > best.y) best = p; } return best; }
 let hov = null, sel = null;
-function hover(e) { const p = pick(e.clientX, e.clientY); cv.style.cursor = p ? 'pointer' : ''; hov = p; }
+function setHover(p) {
+  if (hov === p) return;
+  if (hov && LBL[hov.id]) LBL[hov.id].tag.classList.remove('hot');
+  hov = p;
+  if (p && LBL[p.id]) LBL[p.id].tag.classList.add('hot');
+}
+function hover(e) { const p = pick(e.clientX, e.clientY); setHover(p); cv.style.cursor = p ? 'pointer' : ''; }
 function click(sx, sy) { const p = pick(sx, sy); select(p); if (p) focus(p); }
-function select(p) { sel = p; document.querySelectorAll('.ib').forEach(b => b.classList.toggle('sel', !!p && b.dataset.id === p.id)); const card = $('card');
-  if (!p) { card.classList.add('hidden'); return; } showCard(); card.classList.remove('hidden'); showBub(p, 4.5); }
+function select(p) { sel = p; document.querySelectorAll('.ib').forEach(b => b.classList.toggle('sel', !!p && b.dataset.id === p.id));
+  for (const q of people) if (LBL[q.id]) LBL[q.id].tag.classList.toggle('on', q === p);
+  const card = $('card');
+  if (!p) { card.classList.add('hidden'); return; } showCard(); card.classList.remove('hidden');
+  const task = (STATUS.team[p.id] || {}).task_en; showBub(p, 6, task || null); }
 $('cardx').onclick = () => select(null);
 function avatar(cvs, id) { const a = cvs.getContext('2d'); a.clearRect(0, 0, cvs.width, cvs.height); a.imageSmoothingEnabled = false; a.drawImage(CHARS[id].down[1], 0, 6, 16, 20, 0, 0, cvs.width, cvs.height); }
+function roleOf(p) { const s = STATUS.team[p.id] || {}; return s.role || p.role_en; }
 function showCard() { if (!sel) return; const s = STATUS.team[sel.id] || {}; const w = working(sel);
-  $('cname').textContent = sel.name; $('crole').textContent = sel.role_en; $('card').style.setProperty('--acc', sel.color);
-  $('cstat').innerHTML = `<i class="${w ? 'on' : ''}"></i>${w ? 'ACTIVE' : 'IDLE'}`;
+  $('cname').textContent = sel.name; $('crole').textContent = roleOf(sel); $('cduty').textContent = sel.blurb || '';
+  $('card').style.setProperty('--acc', sel.color); $('card').classList.toggle('working', w); $('card').classList.toggle('idle', !w);
+  $('cstat').innerHTML = w ? '<i class="on"></i>WORKING' : '<i></i><span class="zs">zzz</span>IDLE';
   $('cact').textContent = s.task_en || '—'; avatar($('avatar'), sel.id); }
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
@@ -628,11 +732,15 @@ const labels = $('labels'); const LBL = {}; const OV = [];
 const ROOMS = [['EXECUTIVE BAR', 6 * T + 8, 13 * T + TOPM + 2, '01'], ['WAR ROOM', 6 * T + 8, 27 * T + TOPM + 2, '02'], ['TRADING FLOOR', 23 * T, 26 * T + TOPM + 6, '03'], ['SERVER VAULT', 39 * T + 8, 13 * T + TOPM + 2, '04'], ['VIP LOUNGE', 39 * T + 8, 28 * T + TOPM - 2, '05']];
 function buildHUD() { const menu = $('menu');
   for (const p of people) { const b = document.createElement('button'); b.className = 'ib'; b.dataset.id = p.id; b.style.setProperty('--acc', p.color);
-    const c = mk(32, 40); avatar(c, p.id); b.innerHTML = `<span class="av"></span><span class="nm"><b>${p.name}</b><small>${p.role_en}</small></span><span class="st"><i></i><em>IDLE</em></span>`;
-    b.querySelector('.av').appendChild(c); b.onclick = () => { focus(p); select(p); }; menu.appendChild(b);
-    const tag = document.createElement('div'); tag.className = 'tag'; tag.innerHTML = `<i></i>${p.name}`; const bub = document.createElement('div'); bub.className = 'bub'; labels.append(bub, tag); LBL[p.id] = { tag, bub, until: 0, on: false }; }
+    const c = mk(32, 40); avatar(c, p.id); b.innerHTML = `<span class="av"></span><span class="nm"><b>${esc(p.name)}</b><small>${esc(p.role_en)}</small></span><span class="st"><i></i><em>IDLE</em></span>`;
+    b.querySelector('.av').appendChild(c); b.onclick = () => { focus(p); select(p); };
+    b.onmouseenter = () => setHover(p); b.onmouseleave = () => { if (hov === p) setHover(null); };
+    menu.appendChild(b);
+    const tag = document.createElement('div'); tag.className = 'tag'; tag.style.setProperty('--acc', p.color);
+    tag.innerHTML = `<i></i><span class="tg"><b>${esc(p.name)}</b><small>${esc(p.role_en)}</small></span><em class="zs">z</em>`;
+    const bub = document.createElement('div'); bub.className = 'bub'; labels.append(bub, tag); LBL[p.id] = { tag, bub, until: 0, on: false }; }
   for (const [txt, cx, cy, sub] of ROOMS) { const el = document.createElement('div'); el.className = 'ov room'; el.innerHTML = `<span>${sub}</span><b>${txt}</b>`; el.style.width = '160px'; el.style.height = '12px'; $('ovl').appendChild(el); OV.push({ el, wx: cx - 80, wy: cy }); } }
-function placeLabels() { const sc = Math.max(.7, Math.min(1.15, cam.z / 2.4)), showTags = cam.z >= 1.05;
+function placeLabels() { const sc = Math.max(.82, Math.min(1.2, cam.z / 2.05)), showTags = cam.z >= .85;
   for (const p of people) { const L = LBL[p.id], off = p.state === 'type' ? 6 : 0; const sx = cam.x + p.x * cam.z, top = cam.y + (p.y + off - 30 + TOPM) * cam.z, bot = cam.y + (p.y + off + 5 + TOPM) * cam.z;
     L.tag.classList.toggle('off', !(showTags || p === sel || p === hov));
     L.tag.style.transform = `translate(${Math.round(sx - L.tag.offsetWidth * sc / 2)}px,${Math.round(bot)}px) scale(${sc})`;
@@ -641,12 +749,12 @@ function placeOverlays() { for (const o of OV) o.el.style.transform = `translate
 
 // speech bubbles: a few at a time, staggered — usually 1–2, at most 3 ambient bubbles at once (never the whole team); starts are spaced >= 1.2 s apart, each fades in, lingers ~3.5–5 s, fades out
 let bubK = 0, clock = 0; const BUB = { act: new Set(), next: 1.5, cool: {} }; const BUB_MAX = 3;
-function bubText(p) { const s = STATUS.team[p.id] || {}, w = working(p), L = LINES[p.id] || { work: [], idle: [] };
-  const pool = (w ? L.work : L.idle).concat(s.task_en ? [s.task_en] : []); bubK++;
-  return { line: pool[(bubK + people.indexOf(p)) % Math.max(1, pool.length)] || (w ? 'working...' : 'chilling...'), think: !w && Math.random() < .5 }; }
-function showBub(p, dur) { const L = LBL[p.id]; if (!L) return; const b = bubText(p);
+function bubText(p) { const w = working(p), L = LINES[p.id] || { work: ['on it'], idle: ['standing by'] };
+  const pool = w ? L.work : L.idle; bubK++;
+  return { line: pool[(bubK + people.indexOf(p)) % pool.length] || (w ? 'working…' : 'standing by'), think: !w && Math.random() < .45 }; }
+function showBub(p, dur, forceLine) { const L = LBL[p.id]; if (!L) return; const b = forceLine ? { line: forceLine, think: false } : bubText(p);
   L.bub.innerHTML = `<i style="background:${p.color}"></i>${esc(b.line)}` + (b.think ? '<u class="t1"></u><u class="t2"></u>' : '');
-  L.bub.className = 'bub' + (b.think ? ' think' : ''); void L.bub.offsetWidth; L.bub.classList.add('in'); L.on = true; L.until = clock + dur; }
+  L.bub.className = 'bub' + (b.think ? ' think' : '') + (forceLine ? ' task' : ''); void L.bub.offsetWidth; L.bub.classList.add('in'); L.on = true; L.until = clock + dur; }
 function hideBub(p) { const L = LBL[p.id]; if (L && L.on) { L.on = false; L.bub.classList.remove('in'); } }
 function bubbleTick(dt) { clock += dt;
   for (const p of people) { const L = LBL[p.id]; if (L && L.on && clock >= L.until) { hideBub(p); if (BUB.act.delete(p)) BUB.cool[p.id] = clock + 7 + Math.random() * 6; } }
@@ -675,9 +783,12 @@ function refreshBoard() { const nv = STATUS.net_value || {}; const v = Number(nv
   for (const el of document.querySelectorAll('.livetag')) { el.classList.toggle('stale', !live); el.querySelector('em').textContent = live ? 'LIVE' : 'LAST SYNC'; }
   $('syncT').textContent = asOf ? asOf.slice(11, 16) + ' ICT' : '—'; }
 function refreshHUD() { refreshBoard(); let n = 0;
-  for (const p of people) { const w = working(p); if (w) n++; LBL[p.id].tag.classList.toggle('w', w);
-    const b = document.querySelector(`.ib[data-id="${p.id}"]`); b.classList.toggle('w', w); b.querySelector('em').textContent = w ? 'ACTIVE' : 'IDLE'; b.title = (STATUS.team[p.id] || {}).task_en || ''; }
-  $('wcount').innerHTML = `<b>${n}</b> / ${people.length} ACTIVE`;
+  for (const p of people) { const w = working(p); if (w) n++; const role = roleOf(p), task = (STATUS.team[p.id] || {}).task_en || '';
+    LBL[p.id].tag.classList.toggle('w', w); LBL[p.id].tag.classList.toggle('idle', !w);
+    const ts = LBL[p.id].tag.querySelector('small'); if (ts) ts.textContent = role;
+    const b = document.querySelector(`.ib[data-id="${p.id}"]`); b.classList.toggle('w', w); b.classList.toggle('idle', !w);
+    b.querySelector('em').textContent = w ? 'WORKING' : 'IDLE'; b.querySelector('small').textContent = role; b.title = task ? role + ' — ' + task : role; }
+  $('wcount').innerHTML = `<b>${n}</b> / ${people.length} WORKING`;
   $('sys').innerHTML = (STATUS.systems || []).map(s => `<span class="${s.ok ? 'ok' : 'bad'}"><i></i>${esc(s.name)}</span>`).join('');
   showCard(); }
 // ---------- all-time volume ranking (public Polymarket Perps leaderboard, same data as polymarket.com/leaderboard/perps/all/volume) ----------
@@ -692,7 +803,16 @@ async function pollRank() { const q = new URLSearchParams(location.search), addr
     $('rankBox').title = me ? 'All-time perps volume rank · Polymarket leaderboard' : 'Account address not linked yet — set leaderboard_account in status.json';
   } catch (e) { } }
 async function poll() { try { const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); STATUS.team = j.team || {}; STATUS.systems = j.systems; STATUS.updated = j.updated; STATUS.net_value = j.net_value; STATUS.account = j.leaderboard_account || ''; } } catch (e) { } refreshHUD(); }
-function tickClock() { $('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }); }
+let skyReady = false;
+function paintPhase() {
+  const prev = phase, bk = readPhase();
+  $('clock').textContent = bk.label;
+  $('phaseLbl').textContent = phase.toUpperCase();
+  document.body.dataset.phase = phase;
+  const pip = $('phasePip'); if (pip) pip.title = 'Bangkok ' + phase;
+  if (skyReady && prev !== phase) { bakeSky(); bakeLight(); }
+}
+function tickClock() { paintPhase(); }
 
 // ---------- main ----------
 let last = 0, candleT = 0;
@@ -705,7 +825,8 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
   const t0 = performance.now();
   try { await loadAll(k => { $('spbar').style.width = Math.round(k * 100) + '%'; }); }
   catch (e) { $('spmsg').textContent = 'ASSET LOAD FAILED — PLEASE REFRESH'; return; }
-  buildBlocked(); buildRoam(); bakeFloor(); bakeSky(); bakeLight(); buildHUD();
+  paintPhase();
+  buildBlocked(); buildRoam(); bakeFloor(); bakeSky(); bakeLight(); skyReady = true; buildHUD();
   await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000); pollRank(); setInterval(pollRank, 120000);
   const f = fitTarget(); const q = new URLSearchParams(location.search); if (q.has('shot')) document.body.classList.add('noanim'); if (q.has('cx')) { const z = +q.get('z') || 3; Object.assign(f, { z, x: innerWidth / 2 - (+q.get('cx')) * T * z, y: innerHeight / 2 - ((+q.get('cy')) * T + TOPM) * z }); } Object.assign(cam, { z: f.z * .86, x: f.x + W * f.z * .07, y: f.y + H * f.z * .07 });
   requestAnimationFrame(frame);
