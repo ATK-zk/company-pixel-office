@@ -1,35 +1,35 @@
 {
   "team": {
-    "as_of": "2026-10-12 15:46 ICT",
+    "as_of": "2026-10-12 16:49 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
-      "task_en": "Coordinating go-live: ~95% done; will send CEO one approval for TIME_TO_CLOSE + real money once DRY_RUN numbers match"
+      "task_en": "Overseeing post-v7 desk: idea B backtest in flight; contacts CEO only for real-money approval or RED"
     },
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "Building v5: heartbeat copy on droplet + hash-check for runner, systemd units and desk-clear-halt"
+      "task_en": "Backtesting idea B (BTC/ETH momentum) with fees, funding, and slippage under Critic 3 conditions"
     },
     "critic": {
       "state": "WORKING",
       "role": "Code review",
-      "task_en": "Approved v4; waiting to review v5 hashes"
+      "task_en": "Waiting to review idea B backtest; approved v7 limits (3x leverage, 20% warn)"
     },
     "risk": {
       "state": "WORKING",
       "role": "Health & loss cap",
-      "task_en": "Monitoring health checks every 15 min; all green, engine in DRY_RUN since 14:57"
+      "task_en": "Monitoring health checks every 15 min; all green after v7; RED alerts trusted again"
     },
     "scout": {
-      "state": "IDLE",
+      "state": "WORKING",
       "role": "Trading ideas",
-      "task_en": "On hold until the system goes live"
+      "task_en": "Researching idea C: how closely Binance and Polymarket funding move together"
     },
     "ops": {
       "state": "WORKING",
       "role": "Ledger & reports",
-      "task_en": "Pixel office live; keeping status updated hourly; daily 07:30 report starts once DRY_RUN data flows"
+      "task_en": "Hourly pixel-office status sync; equity real-time sync still to fix; wallet shortened on site"
     }
   },
   "systems": [
