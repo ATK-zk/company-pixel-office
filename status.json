@@ -1,1 +1,47 @@
-{"team": {"david": {"state": "WORKING", "task_en": "Overseeing the company"}, "rex": {"state": "WORKING", "task_en": "Pulling prices, OI, funding"}, "lyra": {"state": "WORKING", "task_en": "Computing momentum + OI signals"}, "kai": {"state": "IDLE", "task_en": "Guarding the $20/day cap"}, "finn": {"state": "WORKING", "task_en": "Execution adapter + dead-man"}, "jay": {"state": "IDLE", "task_en": "Daily ops checklist"}, "quinn": {"state": "IDLE", "task_en": "Waiting for live PnL to gate"}, "sage": {"state": "WORKING", "task_en": "Watching droplet + poller"}}, "systems": [{"name": "Ticker poller", "ok": true}, {"name": "Equity sync", "ok": true}], "updated": "2026-10-12 13:21 ICT", "net_value": {"usd": 400.0, "day_pnl_usd": -32.89, "positions": 0, "source": "polymarket-perps", "as_of": "2026-10-12 13:21 ICT"}, "leaderboard_account": "0x80f8eFb44b3bbC088B3360266c29DAcEFf1a8C3F"}
+{
+  "team": {
+    "lead": {
+      "state": "WORKING",
+      "role": "Team lead",
+      "task_en": "Coordinating the v3 install and preparing the go-live approval"
+    },
+    "quant": {
+      "state": "WORKING",
+      "role": "Strategy & engine",
+      "task_en": "Installing v3 on the server in DRY_RUN"
+    },
+    "critic": {
+      "state": "WORKING",
+      "role": "Code review",
+      "task_en": "Checking v3 manifest hashes"
+    },
+    "risk": {
+      "state": "IDLE",
+      "role": "Health & loss cap",
+      "task_en": "Waiting for the first heartbeat after the engine starts"
+    },
+    "scout": {
+      "state": "IDLE",
+      "role": "Trading ideas",
+      "task_en": "On hold until the system is live"
+    },
+    "ops": {
+      "state": "WORKING",
+      "role": "Ledger & reports",
+      "task_en": "Updating this office page"
+    }
+  },
+  "systems": [
+    {"name": "Ticker poller", "ok": true},
+    {"name": "Equity sync", "ok": true}
+  ],
+  "updated": "2026-10-12 13:21 ICT",
+  "net_value": {
+    "usd": 400.0,
+    "day_pnl_usd": -32.89,
+    "positions": 0,
+    "source": "polymarket-perps",
+    "as_of": "2026-10-12 13:21 ICT"
+  },
+  "leaderboard_account": "0x80f8eFb44b3bbC088B3360266c29DAcEFf1a8C3F"
+}
