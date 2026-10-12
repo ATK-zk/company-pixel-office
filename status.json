@@ -1,25 +1,25 @@
 {
   "team": {
-    "as_of": "2026-10-12 20:01 ICT",
+    "as_of": "2026-10-12 21:13 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
-      "task_en": "Acting for CEO; v10.1 installed in DRY_RUN; go-live scripts staged for Tue–Wed window; dry-run tomorrow, live Wed if Critic passes"
+      "task_en": "Acting for CEO; v10.1 in DRY_RUN; go-live package Critic-approved for Tue 08:00–Wed 07:00 after tomorrow dry-run and CEO 1:1"
     },
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "v10.1 installed on the server (DRY_RUN); building v11 per-strategy sockets and multi-asset backtest; golive scripts ready"
+      "task_en": "v10.1 installed (DRY_RUN); v11 code approved, install after Wed; BTC/ETH go-live scripts Critic-approved, waiting on dry-run"
     },
     "critic": {
       "state": "WORKING",
       "role": "Code review",
-      "task_en": "Passed v10.1 install; approved v11 private-group socket design; next is v11 install / go-live review"
+      "task_en": "Passed v10.1; approved v11 code and go-live package; next is 07:00 dry-run review tomorrow"
     },
     "risk": {
       "state": "WORKING",
       "role": "Health & loss cap",
-      "task_en": "Health checks every 15 min, all green after v10.1; alert thresholds must be rescaled before using the $200 cap"
+      "task_en": "Health checks every 15 min, all green; $7.5/$9 alerts live; position-size YELLOW waits for v11"
     },
     "scout": {
       "state": "IDLE",
@@ -29,7 +29,7 @@
     "ops": {
       "state": "WORKING",
       "role": "Ledger & reports",
-      "task_en": "Logged v10.1 install; hourly site status sync; daily 07:30 ops report to Desk Lead starts tomorrow"
+      "task_en": "Hourly site status sync; 07:30 ops report to Desk Lead starts tomorrow; tax ledger ready for live fills"
     }
   },
   "systems": [
