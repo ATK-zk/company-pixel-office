@@ -754,13 +754,27 @@ function setNav(v) { if (!isFinite(v)) { $('tNav').textContent = '—'; return; 
 function navStep(dt) { if (!navAnim) return; navAnim.k = Math.min(1, navAnim.k + dt / 1.8); const e = 1 - Math.pow(1 - navAnim.k, 4); navShown = navAnim.from + (navAnim.to - navAnim.from) * e;
   $('tNav').textContent = money(navShown); if (navAnim.k >= 1) navAnim = null; }
 function parseIct(s) { const m = /(\d{4})-(\d\d)-(\d\d)[ T](\d\d):(\d\d)/.exec(s || ''); return m ? Date.UTC(+m[1], m[2] - 1, +m[3], m[4] - 7, +m[5]) : NaN; }
-function refreshBoard() { const nv = STATUS.net_value || {}; const v = Number(nv.usd), d = Number(nv.day_pnl_usd);
+function ictHm(ms) {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms));
+  const h = parts.find(p => p.type === 'hour').value, m = parts.find(p => p.type === 'minute').value;
+  return h + ':' + m + ' ICT';
+}
+function refreshBoard() { const nv = STATUS.net_value || {}; const fileUsd = Number(nv.usd), d = Number(nv.day_pnl_usd);
+  const live = !!(liveEq && isFinite(liveEq.usd));
+  const v = live ? liveEq.usd : fileUsd;
   setNav(v);
   const ok = isFinite(d), ds = ok ? (d > 0 ? '+' : d < 0 ? '−' : '') + money(d) : '—', dc = d > 0 ? 'up' : d < 0 ? 'dn' : '';
   $('tDay').textContent = ok ? ds + ' today' : ''; $('tDay').className = dc;
-  const asOf = nv.as_of || STATUS.updated || ''; const age = (Date.now() - parseIct(asOf)) / 60000; const live = isFinite(age) && age < 90;
-  for (const el of document.querySelectorAll('.livetag')) { el.classList.toggle('stale', !live); el.querySelector('em').textContent = live ? 'LIVE' : 'LAST SYNC'; }
-  $('syncT').textContent = asOf ? asOf.slice(11, 16) + ' ICT' : '—'; }
+  const asOf = nv.as_of || STATUS.updated || '';
+  for (const el of document.querySelectorAll('.livetag')) {
+    el.classList.toggle('stale', !live);
+    el.querySelector('em').textContent = live ? 'LIVE' : 'LAST SYNC';
+    el.dataset.src = live ? 'api' : 'file';
+    el.dataset.usd = isFinite(v) ? String(v) : '';
+    el.dataset.at = live ? String(liveEq.at) : '';
+    el.title = live ? 'Live perps equity · ' + shortAddr(liveEq.addr) : 'Showing the last equity saved in status.json';
+  }
+  $('syncT').textContent = live ? ictHm(liveEq.at) : (asOf ? asOf.slice(11, 16) + ' ICT' : '—'); }
 function refreshHUD() { refreshBoard(); let n = 0;
   for (const p of people) { const w = working(p); if (w) n++; const role = roleOf(p), task = (STATUS.team[p.id] || {}).task_en || '';
     LBL[p.id].tag.classList.toggle('w', w); LBL[p.id].tag.classList.toggle('idle', !w);
@@ -785,6 +799,25 @@ async function pollRank() { const q = new URLSearchParams(location.search), addr
     $('rankBox').title = me ? 'All-time perps volume rank · ' + shortAddr(addr) : 'Account address not linked yet — set leaderboard_account in status.json';
   } catch (e) { } }
 async function poll() { try { const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); STATUS.team = j.team || {}; STATUS.systems = j.systems; STATUS.updated = j.updated; STATUS.net_value = j.net_value; STATUS.account = j.leaderboard_account || ''; } } catch (e) { } refreshHUD(); }
+// ---------- live equity (public Polymarket Perps portfolio, no auth). status.json net_value is the fallback. ----------
+const PF_API = 'https://api.perpetuals.polymarket.com/v1/info/portfolio?address=';
+let liveEq = null, eqBusy = false;
+async function pollEquity() {
+  if (eqBusy) return;
+  const q = new URLSearchParams(location.search), addr = (q.get('addr') || STATUS.account || '').trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) { liveEq = null; refreshBoard(); return; }
+  eqBusy = true;
+  try {
+    const r = await fetch(PF_API + addr, { cache: 'no-store' });
+    if (!r.ok) throw new Error('portfolio');
+    const j = await r.json();
+    const usd = Number(j.equity), at = Number(j.timestamp);
+    if (!isFinite(usd)) throw new Error('equity');
+    liveEq = { usd, at: isFinite(at) ? at : Date.now(), addr };
+  } catch (e) { liveEq = null; }
+  eqBusy = false;
+  refreshBoard();
+}
 function paintPhase() {
   $('clock').textContent = bangkokNow().label;
   $('phaseLbl').textContent = 'NIGHT';
@@ -807,7 +840,7 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
   paintPhase();
   buildBlocked(); buildRoam(); bakeFloor(); bakeSky(); bakeLight();
   buildHUD();
-  await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000); pollRank(); setInterval(pollRank, 120000);
+  await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000); pollRank(); setInterval(pollRank, 120000); pollEquity(); setInterval(pollEquity, 20000);
   const f = fitTarget(); const q = new URLSearchParams(location.search); if (q.has('shot')) document.body.classList.add('noanim'); if (q.has('cx')) { const z = +q.get('z') || 3; Object.assign(f, { z, x: innerWidth / 2 - (+q.get('cx')) * T * z, y: innerHeight / 2 - ((+q.get('cy')) * T + TOPM) * z }); } Object.assign(cam, { z: f.z * .86, x: f.x + W * f.z * .07, y: f.y + H * f.z * .07 });
   requestAnimationFrame(frame);
   if (q.has('shot')) { Object.assign(cam, f); document.body.classList.add('ready'); }
