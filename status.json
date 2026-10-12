@@ -1,6 +1,6 @@
 {
   "team": {
-    "as_of": "2026-10-12 21:13 ICT",
+    "as_of": "2026-10-12 22:17 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
@@ -22,9 +22,9 @@
       "task_en": "Health checks every 15 min, all green; $7.5/$9 alerts live; position-size YELLOW waits for v11"
     },
     "scout": {
-      "state": "IDLE",
+      "state": "WORKING",
       "role": "Trading ideas",
-      "task_en": "Universe screen done: 11 of 88 Perps assets pass; daily price files delivered to Quant"
+      "task_en": "Relaxed universe screen (30d volume over $200k, 1y+ history): 55 of 88 Perps assets pass, up from 11; reading mark and index price docs"
     },
     "ops": {
       "state": "WORKING",
