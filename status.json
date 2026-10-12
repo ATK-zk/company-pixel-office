@@ -1,35 +1,35 @@
 {
   "team": {
-    "as_of": "2026-10-12 16:49 ICT",
+    "as_of": "2026-10-12 17:50 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
-      "task_en": "Overseeing post-v7 desk: idea B backtest in flight; contacts CEO only for real-money approval or RED"
+      "task_en": "Acting for CEO while away; holding $20/coin $200 total caps; dry-run tomorrow, live Wed if Critic passes"
     },
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "Backtesting idea B (BTC/ETH momentum) with fees, funding, and slippage under Critic 3 conditions"
+      "task_en": "Prepared v10 with $20/coin and $200 total notional caps; awaiting Critic's two extra tests before install"
     },
     "critic": {
       "state": "WORKING",
       "role": "Code review",
-      "task_en": "Waiting to review idea B backtest; approved v7 limits (3x leverage, 20% warn)"
+      "task_en": "Approved v10 code; requesting two more edge-case tests before install"
     },
     "risk": {
       "state": "WORKING",
       "role": "Health & loss cap",
-      "task_en": "Monitoring health checks every 15 min; all green after v7; RED alerts trusted again"
+      "task_en": "Monitoring health every 15 min; desk-warn flaps matched restarts; all green after v9"
     },
     "scout": {
       "state": "WORKING",
       "role": "Trading ideas",
-      "task_en": "Researching idea C: how closely Binance and Polymarket funding move together"
+      "task_en": "Screening all 88 Polymarket Perps assets for history, liquidity, and funding"
     },
     "ops": {
       "state": "WORKING",
       "role": "Ledger & reports",
-      "task_en": "Hourly pixel-office status sync; equity real-time sync still to fix; wallet shortened on site"
+      "task_en": "Hourly status sync; live equity and leaderboard on site; day P&L still stale"
     }
   },
   "systems": [
