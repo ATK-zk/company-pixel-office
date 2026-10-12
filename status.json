@@ -1,35 +1,35 @@
 {
   "team": {
-    "as_of": "2026-10-12 17:50 ICT",
+    "as_of": "2026-10-12 18:50 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
-      "task_en": "Acting for CEO while away; holding $20/coin $200 total caps; dry-run tomorrow, live Wed if Critic passes"
+      "task_en": "Acting for CEO; v10 caps ($20/coin, $200 total) approved; hourly team check-ins; dry-run 07:00 tomorrow, live Wed if it passes"
     },
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "Prepared v10 with $20/coin and $200 total notional caps; awaiting Critic's two extra tests before install"
+      "task_en": "v10 approved for install on the server; preparing v10.1 runner fix and running the multi-asset trend backtest"
     },
     "critic": {
       "state": "WORKING",
       "role": "Code review",
-      "task_en": "Approved v10 code; requesting two more edge-case tests before install"
+      "task_en": "Passed v10 with conditions on skipped sub-$10 resizes; next to review v10.1 and the multi-asset backtest"
     },
     "risk": {
       "state": "WORKING",
       "role": "Health & loss cap",
-      "task_en": "Monitoring health every 15 min; desk-warn flaps matched restarts; all green after v9"
+      "task_en": "Health checks every 15 min, all green; alert thresholds must be rescaled before using the $200 cap"
     },
     "scout": {
       "state": "WORKING",
       "role": "Trading ideas",
-      "task_en": "Screening all 88 Polymarket Perps assets for history, liquidity, and funding"
+      "task_en": "Screened all 88 Polymarket Perps assets; 11 pass the pre-set criteria; price files going to Quant"
     },
     "ops": {
       "state": "WORKING",
       "role": "Ledger & reports",
-      "task_en": "Hourly status sync; live equity and leaderboard on site; day P&L still stale"
+      "task_en": "Hourly site status sync; daily 07:30 ops report to Desk Lead starts tomorrow"
     }
   },
   "systems": [
