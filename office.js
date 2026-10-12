@@ -770,19 +770,17 @@ function refreshHUD() { refreshBoard(); let n = 0;
   $('wcount').innerHTML = `<b>${n}</b> / ${people.length} WORKING`;
   const at = STATUS.team && typeof STATUS.team.as_of === 'string' ? STATUS.team.as_of : '';
   $('statusAt').textContent = at ? 'Status updated ' + at : '';
+  showRank();
   $('sys').innerHTML = (STATUS.systems || []).map(s => `<span class="${s.ok ? 'ok' : 'bad'}"><i></i>${esc(s.name)}</span>`).join('');
   showCard(); }
-// ---------- all-time volume ranking (public Polymarket Perps leaderboard, same data as polymarket.com/leaderboard/perps/all/volume) ----------
-const LB_API = 'https://api.perpetuals.polymarket.com/v1/info/leaderboard?window=all&sort_by=notional&limit=1';
-const compact = v => { const a = Math.abs(v); return '$' + (a >= 1e9 ? (a / 1e9).toFixed(2) + 'B' : a >= 1e6 ? (a / 1e6).toFixed(2) + 'M' : a >= 1e4 ? (a / 1e3).toFixed(1) + 'K' : a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); };
-async function pollRank() { const q = new URLSearchParams(location.search), addr = (q.get('addr') || STATUS.account || '').trim();
-  try { const r = await fetch(LB_API + (/^0x[0-9a-fA-F]{40}$/.test(addr) ? '&address=' + addr : ''), { cache: 'no-store' }); if (!r.ok) return; const j = await r.json();
-    const tot = Number(j.total), me = j.account || null, vol = me ? Number(me.notional) : NaN, rk = me && me.rank != null ? Number(me.rank) : NaN;
-    $('tVol').textContent = isFinite(vol) ? compact(vol) : '—';
-    $('tRank').textContent = isFinite(rk) ? '#' + rk.toLocaleString('en-US') : '—';
-    $('tOf').textContent = isFinite(tot) ? 'of ' + tot.toLocaleString('en-US') : '';
-    $('rankBox').title = me ? 'All-time perps volume rank · Polymarket leaderboard' : 'Account address not linked yet — set leaderboard_account in status.json';
-  } catch (e) { } }
+// Volume and rank need a full address lookup. The public file keeps only a short label, so the figures stay blank.
+function showRank() {
+  const label = (STATUS.account || '').trim();
+  $('tVol').textContent = '—';
+  $('tRank').textContent = '—';
+  $('tOf').textContent = label;
+  $('rankBox').title = label ? 'All-time volume rank is not published for ' + label : 'All-time volume rank is not published';
+}
 async function poll() { try { const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); STATUS.team = j.team || {}; STATUS.systems = j.systems; STATUS.updated = j.updated; STATUS.net_value = j.net_value; STATUS.account = j.leaderboard_account || ''; } } catch (e) { } refreshHUD(); }
 function paintPhase() {
   $('clock').textContent = bangkokNow().label;
@@ -806,7 +804,7 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
   paintPhase();
   buildBlocked(); buildRoam(); bakeFloor(); bakeSky(); bakeLight();
   buildHUD();
-  await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000); pollRank(); setInterval(pollRank, 120000);
+  await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000);
   const f = fitTarget(); const q = new URLSearchParams(location.search); if (q.has('shot')) document.body.classList.add('noanim'); if (q.has('cx')) { const z = +q.get('z') || 3; Object.assign(f, { z, x: innerWidth / 2 - (+q.get('cx')) * T * z, y: innerHeight / 2 - ((+q.get('cy')) * T + TOPM) * z }); } Object.assign(cam, { z: f.z * .86, x: f.x + W * f.z * .07, y: f.y + H * f.z * .07 });
   requestAnimationFrame(frame);
   if (q.has('shot')) { Object.assign(cam, f); document.body.classList.add('ready'); }

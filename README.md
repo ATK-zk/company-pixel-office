@@ -33,8 +33,4 @@ GitHub Pages deploys from `main`. Merging to `main` publishes the site.
 Character sprites and some furniture sprites come from pixel-agents (MIT, see LICENSE-pixel-agents-MIT).
 
 ## Top bar: volume & all-time volume rank
-Pulled live in the browser (CORS-open, public, no auth) every 2 min from
-`https://api.perpetuals.polymarket.com/v1/info/leaderboard?window=all&sort_by=notional&limit=1&address=<acct>` —
-the same data behind https://polymarket.com/leaderboard/perps/all/volume. `account.notional` = our all-time volume,
-`account.rank` = our rank, `total` = number of ranked traders. Set our account (owner/EOA) address in
-`status.json` → `leaderboard_account` (kept by the equity sync). Until it is set, VOLUME/RANK show "—" (no invented numbers).
+VOLUME and VOL RANK stay "—". The public leaderboard only returns an account when the request includes a full address, and the list you can page without one stops at rank 1000. This account is outside that list, and the entries have no display name, so the page cannot resolve the numbers from the short label. `status.json` → `leaderboard_account` is that label only (`0x80f8…8C3F`). The equity sync must not write a full address back into this file.
