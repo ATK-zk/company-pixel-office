@@ -1,6 +1,6 @@
 {
   "team": {
-    "as_of": "2026-10-12 22:17 ICT",
+    "as_of": "2026-10-12 23:09 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
@@ -9,12 +9,12 @@
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "v10.1 installed (DRY_RUN); v11 code approved, install after Wed; BTC/ETH go-live scripts Critic-approved, waiting on dry-run"
+      "task_en": "Backtested new strategies: desk42 and fund3 net positive, paper runners built; rev3, ethbtc and 3 intraday ideas lost money; building funding logger"
     },
     "critic": {
       "state": "WORKING",
       "role": "Code review",
-      "task_en": "Passed v10.1; approved v11 code and go-live package; next is 07:00 dry-run review tomorrow"
+      "task_en": "Reviewed new strategy rules before lock (silver 1.5x cap, stop fills, hold-out); 07:00 dry-run review tomorrow"
     },
     "risk": {
       "state": "WORKING",
@@ -22,9 +22,9 @@
       "task_en": "Health checks every 15 min, all green; $7.5/$9 alerts live; position-size YELLOW waits for v11"
     },
     "scout": {
-      "state": "WORKING",
+      "state": "IDLE",
       "role": "Trading ideas",
-      "task_en": "Relaxed universe screen (30d volume over $200k, 1y+ history): 55 of 88 Perps assets pass, up from 11; reading mark and index price docs"
+      "task_en": "Delivered weekend price-gap data for stocks and silver, used to cap their leverage at 1.5x"
     },
     "ops": {
       "state": "WORKING",
