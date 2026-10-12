@@ -55,12 +55,13 @@ const GOLD = '#c9a35c', GOLD_HI = '#f0d9a0', BRASS_D = '#7a5f32';
 // Night numbers are the locked after-dark look. Day lifts the interior; dawn and dusk are blended between the stops below.
 const SKY = {
   night: { top: '#070b18', mid: '#151532', bot: '#2a1c38', far: '#131a2c', near: '#0a0d18', star: .55, winOn: 1, antenna: true, winWarm: 'rgba(255,207,122,.9)', winCool: 'rgba(159,216,255,.85)', ambient: '#68707f', lamp: 1.08, wash: '#6e8ec4', washA: .2, moon: true, sun: '#fff6c2', lift: 0, sunInk: '#fff4dc' },
-  dawn:  { top: '#4a3a62', mid: '#e08a78', bot: '#f6c9a4', far: '#8a6a78', near: '#4a3848', star: .14, winOn: .32, antenna: false, winWarm: 'rgba(255,207,122,.75)', winCool: 'rgba(159,216,255,.4)', ambient: '#c4b6aa', lamp: .9, wash: '#ffd0b0', washA: .72, moon: false, sun: '#ffe0b0', lift: .62, sunInk: '#ffd2ae' },
-  day:   { top: '#6aabe6', mid: '#b7d6f6', bot: '#e8f3fc', far: '#93a8be', near: '#5c7086', star: 0, winOn: .04, antenna: false, winWarm: 'rgba(255,244,220,.5)', winCool: 'rgba(210,230,255,.35)', ambient: '#e7eef6', lamp: .8, wash: '#fff8ec', washA: 1, moon: false, sun: '#fff6c2', lift: 1, sunInk: '#fff6e4' },
-  dusk:  { top: '#2c2450', mid: '#d15a48', bot: '#f0a36a', far: '#6a4558', near: '#3a2434', star: .16, winOn: .7, antenna: true, winWarm: 'rgba(255,196,120,.9)', winCool: 'rgba(180,200,255,.55)', ambient: '#b9a3a4', lamp: .96, wash: '#ffb088', washA: .62, moon: false, sun: '#ffd0a0', lift: .48, sunInk: '#ffc09a' },
+  dawn:  { top: '#4a3a62', mid: '#e08a78', bot: '#f6c9a4', far: '#8a6a78', near: '#4a3848', star: .14, winOn: .32, antenna: false, winWarm: 'rgba(255,207,122,.75)', winCool: 'rgba(159,216,255,.4)', ambient: '#7c756e', lamp: .96, wash: '#ffb090', washA: .34, moon: false, sun: '#ffe0b0', lift: .4, sunInk: '#ffd2ae' },
+  day:   { top: '#6aabe6', mid: '#b7d6f6', bot: '#e8f3fc', far: '#93a8be', near: '#5c7086', star: 0, winOn: .04, antenna: false, winWarm: 'rgba(255,244,220,.55)', winCool: 'rgba(210,230,255,.4)', ambient: '#8e97a4', lamp: 1.02, wash: '#ffc98a', washA: .55, moon: false, sun: '#fff6c2', lift: 1, sunInk: '#ffc56a' },
+  late:  { top: '#6e9ed4', mid: '#e7c49a', bot: '#f4d2a6', far: '#9a8876', near: '#6a5848', star: 0, winOn: .1, antenna: false, winWarm: 'rgba(255,214,150,.7)', winCool: 'rgba(230,210,180,.35)', ambient: '#948676', lamp: 1.02, wash: '#ffb15e', washA: .62, moon: false, sun: '#ffcc88', lift: 1, sunInk: '#f0a04a' },
+  dusk:  { top: '#2c2450', mid: '#d15a48', bot: '#f0a36a', far: '#6a4558', near: '#3a2434', star: .16, winOn: .7, antenna: true, winWarm: 'rgba(255,196,120,.9)', winCool: 'rgba(180,200,255,.55)', ambient: '#756c78', lamp: 1.02, wash: '#ff9a70', washA: .38, moon: false, sun: '#ffd0a0', lift: .32, sunInk: '#ffb080' },
 };
-// Holds on night and day; the hours between ease through dawn and dusk.
-const SKY_STOPS = [[0, 'night'], [5, 'night'], [6.2, 'dawn'], [7.25, 'day'], [17, 'day'], [18.2, 'dusk'], [19.45, 'night'], [24, 'night']];
+// Night and midday hold. Dawn, late afternoon, and dusk ease between the stops.
+const SKY_STOPS = [[0, 'night'], [5, 'night'], [6.2, 'dawn'], [7.25, 'day'], [14.25, 'day'], [16.6, 'late'], [17.7, 'dusk'], [19.45, 'night'], [24, 'night']];
 let bkkT = 14, phase = 'day', currentPal = SKY.day;
 function parseCol(c) {
   if (c[0] === '#') { const n = parseInt(c.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255, 1]; }
@@ -684,21 +685,38 @@ function drawZzz(g, x, y, t) {
     g.fillRect(xx, yy, 3, 1); g.fillRect(xx + 2, yy + 1, 1, 1); g.fillRect(xx + 1, yy + 2, 1, 1); g.fillRect(xx, yy + 3, 3, 1);
   }
 }
+function sunAngle() {
+  const u = Math.max(0, Math.min(1, (bkkT - 11) / 6.2));
+  return { reach: Math.round(96 + u * 72), slant: Math.round(4 + u * 20) };
+}
+// Soft pixel shafts from the north windows. A wide faint pass, then a narrower core, then a patch on the floor.
+function paintShaft(g, x, y0, reach, slant, col, k) {
+  const steps = 9;
+  for (const [grow, alpha] of [[10, 0.12], [0, 0.3]]) {
+    for (let i = 0; i < steps; i++) {
+      const t0 = i / steps, fade = 1 - t0 * 0.78;
+      const yA = Math.round(y0 + reach * t0), yB = Math.round(y0 + reach * (i + 1) / steps);
+      const xA = Math.round(x + slant * t0) - (grow >> 1), w = Math.round(12 + 18 * t0) + grow;
+      g.fillStyle = hexA(col, alpha * fade * k);
+      g.fillRect(xA, yA, w, Math.max(1, yB - yA));
+    }
+  }
+  const px = Math.round(x + slant * 0.68), py = Math.round(y0 + reach * 0.84);
+  g.fillStyle = hexA(col, 0.16 * k); g.fillRect(px - 8, py - 2, 36, 12);
+  g.fillStyle = hexA(col, 0.26 * k); g.fillRect(px, py, 18, 6);
+}
 function paintDaylight(g) {
   const k = currentPal && currentPal.lift || 0;
-  if (k < .012) return;
-  const ink = currentPal.sunInk || '#fff6e4';
+  if (k < .02) return;
+  const ink = currentPal.sunInk || '#ffc56a';
+  const { reach, slant } = sunAngle();
+  const y0 = TOPM + 15;
   g.save();
-  g.beginPath(); g.rect(0, TOPM + 14, W, ROWS * T); g.clip();
+  g.beginPath(); g.rect(13 * T, TOPM + 14, 20 * T, reach + 22); g.clip();
   g.globalCompositeOperation = 'screen';
-  g.fillStyle = hexA(ink, .4 * k);
-  g.fillRect(0, TOPM + 14, W, ROWS * T);
-  const shaft = g.createLinearGradient(0, TOPM + 12, 0, TOPM + 10 * T);
-  shaft.addColorStop(0, hexA('#fffef8', .7 * k));
-  shaft.addColorStop(.42, hexA(ink, .22 * k));
-  shaft.addColorStop(1, hexA(ink, 0));
-  g.fillStyle = shaft;
-  g.fillRect(12 * T, TOPM + 14, 22 * T, 16 * T);
+  g.fillStyle = hexA('#fff1c8', 0.18 * k);
+  g.fillRect(13 * T, TOPM + 14, 20 * T, 2);
+  for (const c of [15, 18.5, 24, 30]) paintShaft(g, c * T, y0, reach, slant, ink, k);
   g.restore();
 }
 function drawSteam(g, t) {
@@ -863,6 +881,10 @@ async function pollRank() { const q = new URLSearchParams(location.search), addr
   } catch (e) { } }
 async function poll() { try { const r = await fetch('status.json?t=' + Date.now(), { cache: 'no-store' }); if (r.ok) { const j = await r.json(); STATUS.team = j.team || {}; STATUS.systems = j.systems; STATUS.updated = j.updated; STATUS.net_value = j.net_value; STATUS.account = j.leaderboard_account || ''; } } catch (e) { } refreshHUD(); }
 let skyReady = false, bakedStamp = '';
+function lightStamp() {
+  const moving = (bkkT >= 5 && bkkT < 7.5) || (bkkT >= 14.2 && bkkT < 19.6);
+  return moving ? 't' + Math.floor(bkkT * 30) : phase;
+}
 function paintPhase() {
   const bk = readPhase();
   syncPal();
@@ -870,7 +892,7 @@ function paintPhase() {
   $('phaseLbl').textContent = phase.toUpperCase();
   document.body.dataset.phase = phase;
   const pip = $('phasePip'); if (pip) pip.title = 'Bangkok ' + phase;
-  const stamp = (phase === 'dawn' || phase === 'dusk') ? phase + ':' + Math.floor(bkkT * 120) : phase;
+  const stamp = lightStamp();
   if (skyReady && stamp !== bakedStamp) { bakedStamp = stamp; bakeSky(); bakeLight(); }
 }
 function tickClock() { paintPhase(); }
@@ -888,7 +910,7 @@ function frame(ts) { const t = ts / 1000, dt = Math.min(.05, t - (last || t)); l
   catch (e) { $('spmsg').textContent = 'ASSET LOAD FAILED — PLEASE REFRESH'; return; }
   paintPhase();
   buildBlocked(); buildRoam(); bakeFloor(); bakeSky(); bakeLight();
-  bakedStamp = (phase === 'dawn' || phase === 'dusk') ? phase + ':' + Math.floor(bkkT * 120) : phase;
+  bakedStamp = lightStamp();
   skyReady = true; buildHUD();
   await poll(); initPeople(); tickClock(); setInterval(tickClock, 10000); setInterval(poll, 60000); pollRank(); setInterval(pollRank, 120000);
   const f = fitTarget(); const q = new URLSearchParams(location.search); if (q.has('shot')) document.body.classList.add('noanim'); if (q.has('cx')) { const z = +q.get('z') || 3; Object.assign(f, { z, x: innerWidth / 2 - (+q.get('cx')) * T * z, y: innerHeight / 2 - ((+q.get('cy')) * T + TOPM) * z }); } Object.assign(cam, { z: f.z * .86, x: f.x + W * f.z * .07, y: f.y + H * f.z * .07 });
