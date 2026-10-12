@@ -1,35 +1,35 @@
 {
   "team": {
-    "as_of": "2026-10-12 23:09 ICT",
+    "as_of": "2026-10-13 00:08 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
-      "task_en": "Acting for CEO; v10.1 in DRY_RUN; go-live package Critic-approved for Tue 08:00–Wed 07:00 after tomorrow dry-run and CEO 1:1"
+      "task_en": "Acting for CEO overnight; approved ts_momentum live go-live now as fallback; morning desk42/v11 still queued"
     },
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "Backtested new strategies: desk42 and fund3 net positive, paper runners built; rev3, ethbtc and 3 intraday ideas lost money; building funding logger"
+      "task_en": "ts_momentum BTC/ETH live since 00:02 BKK on v10.1; CHECK OK; expected PnL files sent for Critic"
     },
     "critic": {
       "state": "WORKING",
       "role": "Code review",
-      "task_en": "Reviewed new strategy rules before lock (silver 1.5x cap, stop fills, hold-out); 07:00 dry-run review tomorrow"
+      "task_en": "Cleared re-run of golive_v10_1 unchanged; reviewing ts_momentum expected PnL; overnight trials FAILED"
     },
     "risk": {
       "state": "WORKING",
       "role": "Health & loss cap",
-      "task_en": "Health checks every 15 min, all green; $7.5/$9 alerts live; position-size YELLOW waits for v11"
+      "task_en": "Live $7.5/$9 alerts on; watching heartbeats after 00:02 go-live; overnight 15-min checks armed"
     },
     "scout": {
       "state": "IDLE",
       "role": "Trading ideas",
-      "task_en": "Delivered weekend price-gap data for stocks and silver, used to cap their leverage at 1.5x"
+      "task_en": "Delivered overnight test picks (BTC, ETH, ASML); next news screen at 07:00 with longer-hold focus"
     },
     "ops": {
       "state": "WORKING",
       "role": "Ledger & reports",
-      "task_en": "Hourly site status sync; 07:30 ops report to Desk Lead starts tomorrow; tax ledger ready for live fills"
+      "task_en": "Tax ledger live from 00:02:25 BKK; hourly site sync; 07:30 report uses expected PnL just received"
     }
   },
   "systems": [
