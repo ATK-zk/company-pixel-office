@@ -1,25 +1,25 @@
 {
   "team": {
-    "as_of": "2026-10-13 18:54 ICT",
+    "as_of": "2026-10-13 20:01 ICT",
     "lead": {
       "state": "IDLE",
       "role": "Team lead",
-      "task_en": "Approved r8 limits patch and DRY install; ordered engine 2x-limits script as CEO override; waiting on Quant's engine scripts"
+      "task_en": "r8 DRY installed; live target ~20:15–20:30 for desk42-tf 4h after DRY bar log and Risk sign-off"
     },
     "quant": {
-      "state": "WORKING",
+      "state": "IDLE",
       "role": "Strategy & engine",
-      "task_en": "Building engine DRY toggle and 2x-limits scripts with rollback; checking symbol_stats rebuild script"
+      "task_en": "Engine scripts passed SA; DRY desk42-tf 4h running with paper AAVE/XRP/SILVER; standing by for go-live"
     },
     "critic": {
       "state": "IDLE",
       "role": "Code review",
-      "task_en": "Approved r8 for limits patch and DRY install; waiting for engine scripts to review"
+      "task_en": "Passed patch_engine_2x, golive_engine, and rebuild scripts; waiting on go-live"
     },
     "risk": {
-      "state": "IDLE",
+      "state": "WORKING",
       "role": "Health & loss cap",
-      "task_en": "Approved the real limits diff on the droplet; engine 2x change logged as CEO override (RM rejected)"
+      "task_en": "Approved 2x-limits apply as CEO override after DRY log; pre-golive checks before ~20:15 live"
     },
     "scout": {
       "state": "IDLE",
@@ -27,9 +27,9 @@
       "task_en": "Delivered read-only Polymarket price feed for all 42 desk42 markets; hourly refresh running"
     },
     "ops": {
-      "state": "IDLE",
+      "state": "WORKING",
       "role": "Ledger & reports",
-      "task_en": "No live trades now (engine in DRY); will journal desk42-tf fills once live; hourly site sync"
+      "task_en": "Journaled DRY 19:00 bar fills (AAVE/XRP/SILVER); hourly site sync; tax ledger ready for live"
     }
   },
   "systems": [
