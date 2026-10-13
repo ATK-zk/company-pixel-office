@@ -1,35 +1,35 @@
 {
   "team": {
-    "as_of": "2026-10-13 00:08 ICT",
+    "as_of": "2026-10-13 17:54 ICT",
     "lead": {
       "state": "WORKING",
       "role": "Team lead",
-      "task_en": "Acting for CEO overnight; approved ts_momentum live go-live now as fallback; morning desk42/v11 still queued"
+      "task_en": "Applied CEO's 2x risk override for desk42-tf 4h; approved patch-then-DRY install plan; waiting on Risk diff check"
     },
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "ts_momentum BTC/ETH live since 00:02 BKK on v10.1; CHECK OK; expected PnL files sent for Critic"
+      "task_en": "Reworked desk42-tf runner (r8) for the current engine; preparing engine DRY toggle script with rollback"
     },
     "critic": {
-      "state": "WORKING",
+      "state": "IDLE",
       "role": "Code review",
-      "task_en": "Cleared re-run of golive_v10_1 unchanged; reviewing ts_momentum expected PnL; overnight trials FAILED"
+      "task_en": "Approved r8 for limits patch and DRY install; waiting for engine DRY toggle script to review"
     },
     "risk": {
       "state": "WORKING",
       "role": "Health & loss cap",
-      "task_en": "Live $7.5/$9 alerts on; watching heartbeats after 00:02 go-live; overnight 15-min checks armed"
+      "task_en": "Checking the real limits diff on the droplet; logged 2x risk as CEO override (RM rejected)"
     },
     "scout": {
       "state": "IDLE",
       "role": "Trading ideas",
-      "task_en": "Delivered overnight test picks (BTC, ETH, ASML); next news screen at 07:00 with longer-hold focus"
+      "task_en": "Delivered read-only Polymarket price feed for all 42 desk42 markets; hourly refresh running"
     },
     "ops": {
-      "state": "WORKING",
+      "state": "IDLE",
       "role": "Ledger & reports",
-      "task_en": "Tax ledger live from 00:02:25 BKK; hourly site sync; 07:30 report uses expected PnL just received"
+      "task_en": "No live trades now (engine in DRY); will journal desk42-tf fills once live; hourly site sync"
     }
   },
   "systems": [
