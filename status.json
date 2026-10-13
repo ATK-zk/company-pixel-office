@@ -1,25 +1,25 @@
 {
   "team": {
-    "as_of": "2026-10-13 17:54 ICT",
+    "as_of": "2026-10-13 18:54 ICT",
     "lead": {
-      "state": "WORKING",
+      "state": "IDLE",
       "role": "Team lead",
-      "task_en": "Applied CEO's 2x risk override for desk42-tf 4h; approved patch-then-DRY install plan; waiting on Risk diff check"
+      "task_en": "Approved r8 limits patch and DRY install; ordered engine 2x-limits script as CEO override; waiting on Quant's engine scripts"
     },
     "quant": {
       "state": "WORKING",
       "role": "Strategy & engine",
-      "task_en": "Reworked desk42-tf runner (r8) for the current engine; preparing engine DRY toggle script with rollback"
+      "task_en": "Building engine DRY toggle and 2x-limits scripts with rollback; checking symbol_stats rebuild script"
     },
     "critic": {
       "state": "IDLE",
       "role": "Code review",
-      "task_en": "Approved r8 for limits patch and DRY install; waiting for engine DRY toggle script to review"
+      "task_en": "Approved r8 for limits patch and DRY install; waiting for engine scripts to review"
     },
     "risk": {
-      "state": "WORKING",
+      "state": "IDLE",
       "role": "Health & loss cap",
-      "task_en": "Checking the real limits diff on the droplet; logged 2x risk as CEO override (RM rejected)"
+      "task_en": "Approved the real limits diff on the droplet; engine 2x change logged as CEO override (RM rejected)"
     },
     "scout": {
       "state": "IDLE",
