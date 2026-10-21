@@ -1,10 +1,10 @@
 // Frame statistics + a fixed benchmark (continuous render while the camera orbits).
 // The scene renders on demand, so idle FPS is 0 by design; the benchmark is the representative number.
 export function createPerf({ renderer, el, loadMs }) {
-  let frames = 0, windowStart = performance.now(), fps = 0, last = 0, bench = null, shown = false;
+  let frames = 0, total = 0, windowStart = performance.now(), fps = 0, last = 0, bench = null, shown = false;
 
   function frame(now) {
-    frames++;
+    frames++; total++;
     if (bench) { if (last) bench.dts.push(now - last); if (now - bench.t0 >= bench.ms) finishBench(); }
     last = now;
     if (now - windowStart >= 500) { fps = frames * 1000 / (now - windowStart); frames = 0; windowStart = now; if (shown) draw(); }
@@ -16,7 +16,7 @@ export function createPerf({ renderer, el, loadMs }) {
   }
   function info() {
     const r = renderer.info, mem = performance.memory;
-    return { calls: r.render.calls, triangles: r.render.triangles, geometries: r.memory.geometries, textures: r.memory.textures,
+    return { frames: total, calls: r.render.calls, triangles: r.render.triangles, geometries: r.memory.geometries, textures: r.memory.textures,
       loadMs: Math.round(loadMs()), heapMB: mem ? +(mem.usedJSHeapSize / 1048576).toFixed(1) : null };
   }
   function draw(result) {

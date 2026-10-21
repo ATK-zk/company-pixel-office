@@ -1,6 +1,6 @@
 // 3D office scene. Phase 1: floor, isometric camera, lighting. Phase 2: full floor plan from config (desks,
-// area displays, meeting room, walls, plants). No agent data yet — nothing here represents real activity
-// (Phase 5 connects status.json; Phase 4 puts labelled panels on the screens).
+// area displays, meeting room, walls, plants). Phase 3: one seated person per agent, posed from status.json
+// (agent card, state filters). Screens still carry no data — Phase 4 puts labelled panels on them.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
@@ -9,6 +9,9 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { validateDepartments, officeBounds, clampTarget, clampZoom, focusFor, overviewFrustum, easeInOut, workstationTransforms, roomFurniture, ZOOM, VIEW } from './layout.js';
 import { createMaterials, workstationKit, chairKit, displayKit, plantKit, tableKit, buildKit } from './furniture.js';
 import { buildArchitecture } from './architecture.js';
+import { buildAgents } from './agents.js';
+import { agentStatuses, validateAgents, matchesFilter, FILTERS, STATES } from './status.js';
+import { renderAgent, renderArea, renderRoom, renderSource } from './panel.js';
 import { createPerf } from './perf.js';
 
 const LIME = 0xc6ff3d, BG = 0x06080a, CAM_DIST = 90;
@@ -35,11 +38,13 @@ function stripGeometry(x0, z0, x1, z1, width, y) {
 export async function start({ root, params, progress, onFatal }) {
   const t0 = performance.now();
   progress(0.15, 'Leyendo configuración de áreas');
-  const res = await fetch('config/departments.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`config/departments.json → HTTP ${res.status}`);
-  const cfg = await res.json();
+  const getJson = async url => { const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw new Error(`${url} → HTTP ${r.status}`); return r.json(); };
+  const [cfg, agentsCfg] = await Promise.all([getJson('config/departments.json'), getJson('config/agents.json')]);
   const errors = validateDepartments(cfg);
   if (errors.length) throw new Error('Configuración de áreas inválida: ' + errors.join('; '));
+  const agentErrors = validateAgents(agentsCfg, cfg.departments);
+  if (agentErrors.length) throw new Error('Configuración de agentes inválida: ' + agentErrors.join('; '));
+  const staleMinutes = agentsCfg.stale_after_minutes || 120;
 
   const low = params.get('q') === 'low', shadows = !low;
   progress(0.35, 'Preparando renderizador');
@@ -129,14 +134,29 @@ export async function start({ root, params, progress, onFatal }) {
     if (!room) pad.add(new THREE.LineSegments(new THREE.EdgesGeometry(pad.geometry), new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.3 })));
     scene.add(pad); pads.push(pad);
     const el = document.createElement('button');
-    el.type = 'button'; el.className = 'zl' + (room ? ' room' : ''); el.style.setProperty('--c', z.color);
-    el.append(Object.assign(document.createElement('span'), { textContent: z.name }), document.createElement('i'));
-    el.addEventListener('click', () => select(z));
+    el.type = 'button'; el.className = 'zl ' + (room ? 'room' : 'area'); el.style.setProperty('--c', z.color);
+    el.append(Object.assign(document.createElement('span'), { textContent: z.name }));
+    el.addEventListener('click', () => select({ zone: z }));
     const lbl = new CSS2DObject(el);
-    if (room) lbl.position.set((x0 + x1) / 2, (cfg.office.wall_height || 4) - 0.2, (z0 + z1) / 2); else lbl.position.set(z.seat[0], 3.1, z.seat[1] - 0.3);
+    if (room) lbl.position.set((x0 + x1) / 2, (cfg.office.wall_height || 4) - 0.2, (z0 + z1) / 2); else lbl.position.set((x0 + x1) / 2, 3.4, z0 + 0.6);
     scene.add(lbl); labelEls.set(z.id, el);
   }
   const zoneById = id => zones.find(z => z.id === id);
+  const deptOfAgent = id => cfg.departments.find(d => d.agent === id);
+
+  // agent name tags over each person: pill with a state dot + lime diamond (the reference look)
+  const tagEls = new Map();
+  for (const d of cfg.departments) {
+    const meta = agentsCfg.agents[d.agent], el = document.createElement('button');
+    el.type = 'button'; el.className = 'zl agent'; el.style.setProperty('--c', d.color);
+    el.setAttribute('aria-label', `${meta.name}, ${d.name}`);
+    const pill = document.createElement('span');
+    pill.append(Object.assign(document.createElement('b'), { className: 'dot' }), Object.assign(document.createElement('em'), { textContent: meta.name }), Object.assign(document.createElement('small'), { className: 'stale' }));
+    el.append(pill, document.createElement('i'));
+    el.addEventListener('click', () => select({ agent: d.agent }));
+    const lbl = new CSS2DObject(el); lbl.position.set(d.seat[0], 2.35, d.seat[1] + 0.75); scene.add(lbl);
+    tagEls.set(d.agent, el);
+  }
 
   // ---- shell + furniture, all instanced from config ----
   progress(0.7, 'Amueblando las áreas');
@@ -168,8 +188,14 @@ export async function start({ root, params, progress, onFatal }) {
   for (const [kit, list] of [[owned, ownedDesks], [free, freeDesks], [disp, displays]])
     for (const m of kit.meshes) { m.userData.instanceZone = i => zoneById(list[i].dept); pickables.push(m); }
 
+  // ---- people ----
+  const reducedMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cast = buildAgents(cfg, agentsCfg, { shadows, reducedMotion });
+  scene.add(cast.group);
+  pickables.push(...cast.meshes);
+
   // ---- on-demand render loop ----
-  let raf = 0, tween = null, disposed = false, loadMs = 0;
+  let raf = 0, tween = null, disposed = false, loadMs = 0, pollTimer = 0;
   const perf = createPerf({ renderer, el: $('perf'), loadMs: () => loadMs });
   const invalidate = () => { if (!raf && !disposed) raf = requestAnimationFrame(loop); };
   const clampView = () => {
@@ -195,38 +221,88 @@ export async function start({ root, params, progress, onFatal }) {
     return true;
   }
   const orbitAxis = new THREE.Vector3(0, 1, 0);
+  // Camera motion renders every frame; typing animations alone are throttled to ~30 fps.
+  let lastRender = 0;
   function loop(now) {
     raf = 0;
     let active = false;
     if (tween) active = stepTween(now);
     if (perf.benching) { camera.position.sub(controls.target).applyAxisAngle(orbitAxis, 0.006).add(controls.target); active = true; }
     if (controls.update()) active = true;
-    renderer.render(scene, camera); labels.render(scene, camera); perf.frame(now);
-    if (active) invalidate();
+    const animating = cast.animate(now / 1000);
+    if (active || !animating || now - lastRender >= 32) {
+      renderer.render(scene, camera); labels.render(scene, camera); perf.frame(now); lastRender = now;
+    }
+    if (active || animating) invalidate();
   }
 
-  // ---- selection + UI ----
-  let selected = null;
-  const panel = $('panel');
-  function select(d) {
-    selected = d;
-    for (const p of pads) if (p.userData.zone.kind === 'dept') p.material.opacity = d && p.userData.zone.id === d.id ? 0.08 : 0.025;
-    for (const [id, el] of labelEls) el.classList.toggle('sel', !!d && id === d.id);
-    document.querySelectorAll('#depts button').forEach(b => b.setAttribute('aria-pressed', String(!!d && b.dataset.id === d.id)));
-    if (d) {
-      const f = focusFor(d, cfg.office); flyTo(f.x, f.z, f.zoom);
-      $('pName').textContent = d.name; $('pName').style.color = d.color;
-      if (d.kind === 'room') {
-        $('pAgent').textContent = '— (sala compartida)';
-        $('pState').textContent = 'Pantalla de resumen en espera: se conecta en la Fase 4';
-      } else {
-        const nFree = (d.free_desks || []).length;
-        $('pAgent').textContent = d.agent;
-        $('pState').textContent = `Sin conectar: se vincula a status.json en la Fase 5 · ${1 + nFree} puestos (${nFree} libres)`;
-      }
-      panel.hidden = false;
-    } else panel.hidden = true;
-    invalidate();
+  // ---- agent status (status.json, or the labelled demo fixture with ?status=demo) ----
+  const agentIds = cfg.departments.map(d => d.agent);
+  const demo = params.get('status') === 'demo';
+  let statuses = agentStatuses(null, agentIds, { error: 'cargando' }), filter = 'all';
+  async function pollStatus() {
+    let raw = null, error = null;
+    try {
+      const r = await fetch(demo ? 'config/status.demo.json' : 'status.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      raw = await r.json();
+    } catch (e) { error = e.message || String(e); }
+    statuses = agentStatuses(raw, agentIds, { staleMs: staleMinutes * 60000, error });
+    renderSource($('src'), { status: raw, error, statuses });
+    applyStatuses();
+  }
+  function applyStatuses() {
+    for (const id of agentIds) {
+      const s = statuses[id], el = tagEls.get(id), st = STATES[s.state];
+      cast.setStatus(id, s);
+      el.style.setProperty('--s', st.color);
+      el.querySelector('.stale').textContent = s.demo ? ' · demo' : s.stale ? ' · antiguo' : '';
+      el.title = `${st.label}${s.stale && !s.demo ? ' (dato antiguo)' : ''}`;
+    }
+    applyFilter(); refreshPanel(); invalidate();
+  }
+
+  // ---- filters ----
+  const filterBar = $('filters');
+  for (const f of FILTERS) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.f = f.id; b.setAttribute('aria-pressed', String(f.id === 'all'));
+    b.append(Object.assign(document.createElement('span'), { textContent: f.label }), Object.assign(document.createElement('b'), { className: 'n' }));
+    b.addEventListener('click', () => { filter = f.id; applyFilter(); invalidate(); });
+    filterBar.append(b);
+  }
+  function applyFilter() {
+    for (const b of filterBar.querySelectorAll('button')) {
+      b.setAttribute('aria-pressed', String(b.dataset.f === filter));
+      b.querySelector('.n').textContent = agentIds.filter(id => matchesFilter(statuses[id], b.dataset.f)).length;
+    }
+    for (const id of agentIds) { const dim = !matchesFilter(statuses[id], filter); cast.setDim(id, dim); tagEls.get(id).classList.toggle('dim', dim); }
+  }
+
+  // ---- selection + detail panel ----
+  // sel is { zone } (area or room) or { agent: id }
+  let sel = null;
+  const panel = $('panel'), body = $('pBody');
+  function refreshPanel() {
+    if (!sel) { panel.hidden = true; return; }
+    if (sel.agent) {
+      const dept = deptOfAgent(sel.agent);
+      renderAgent(body, { id: sel.agent, meta: agentsCfg.agents[sel.agent], dept, status: statuses[sel.agent], staleMinutes });
+    } else if (sel.zone.kind === 'room') renderRoom(body, { room: sel.zone });
+    else renderArea(body, { dept: sel.zone, meta: agentsCfg.agents[sel.zone.agent], status: statuses[sel.zone.agent], onAgent: () => select({ agent: sel.zone.agent }) });
+    panel.hidden = false;
+  }
+  function select(next) {
+    sel = next;
+    const zoneId = !next ? null : next.agent ? deptOfAgent(next.agent).id : next.zone.id;
+    for (const p of pads) if (p.userData.zone.kind === 'dept') p.material.opacity = p.userData.zone.id === zoneId ? 0.08 : 0.025;
+    for (const [id, el] of labelEls) el.classList.toggle('sel', id === zoneId && !(next && next.agent));
+    for (const [id, el] of tagEls) el.classList.toggle('sel', !!next && next.agent === id);
+    cast.setSelected(next && next.agent);
+    document.querySelectorAll('#depts button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === zoneId)));
+    if (next && next.agent) { const s = cast.seatOf(next.agent); flyTo(s.x, s.z + 0.4, 7); }
+    else if (next) { const f = focusFor(next.zone, cfg.office); flyTo(f.x, f.z, f.zoom); }
+    refreshPanel(); invalidate();
   }
   function recenter() { select(null); flyTo(0, 0, ZOOM.overview, { offset: homeOffset }); }
 
@@ -236,7 +312,7 @@ export async function start({ root, params, progress, onFatal }) {
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.id = d.id; b.setAttribute('aria-pressed', 'false'); b.style.setProperty('--c', d.color);
     b.append(document.createElement('i'), Object.assign(document.createElement('span'), { textContent: d.name }));
-    b.addEventListener('click', () => (selected === d ? recenter() : select(d)));
+    b.addEventListener('click', () => (sel && sel.zone === d ? recenter() : select({ zone: d })));
     list.append(b);
   }
   const zoomBy = k => flyTo(controls.target.x, controls.target.z, camera.zoom * k, { ms: 250 });
@@ -256,8 +332,10 @@ export async function start({ root, params, progress, onFatal }) {
     ray.setFromCamera(ndc, camera);
     const hit = ray.intersectObjects(pickables, false)[0];
     if (!hit) return;
-    const u = hit.object.userData, d = u.instanceZone ? u.instanceZone(hit.instanceId) : u.zone;
-    if (d) select(d);
+    const u = hit.object.userData;
+    if (u.agentId) { select({ agent: u.agentId }); return; }
+    const d = u.instanceZone ? u.instanceZone(hit.instanceId) : u.zone;
+    if (d) select({ zone: d });
   };
   el.addEventListener('pointerdown', onDown); el.addEventListener('pointerup', onUp);
   const onKey = e => {
@@ -279,7 +357,7 @@ export async function start({ root, params, progress, onFatal }) {
 
   function dispose() {
     if (disposed) return; disposed = true;
-    cancelAnimationFrame(raf); ro.disconnect(); controls.dispose(); removeEventListener('keydown', onKey);
+    cancelAnimationFrame(raf); clearInterval(pollTimer); ro.disconnect(); controls.dispose(); removeEventListener('keydown', onKey);
     el.removeEventListener('pointerdown', onDown); el.removeEventListener('pointerup', onUp);
     scene.traverse(o => {
       if (o.geometry) o.geometry.dispose();
@@ -290,10 +368,13 @@ export async function start({ root, params, progress, onFatal }) {
   }
   addEventListener('pagehide', e => { if (!e.persisted) dispose(); });
 
+  progress(0.85, 'Leyendo el estado de los agentes');
+  await pollStatus();
+  if (!demo) pollTimer = setInterval(pollStatus, 60000);
   progress(0.9, 'Compilando shaders');
   await renderer.compileAsync(scene, camera);
   loadMs = performance.now() - t0;
-  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
+  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, statuses: () => statuses, selectAgent: id => select({ agent: id }), runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
   if (params.get('perf') === '1') perf.toggle(true);
   invalidate();
   return { dispose, select, recenter };

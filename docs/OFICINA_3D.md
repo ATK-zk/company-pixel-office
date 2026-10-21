@@ -28,9 +28,14 @@ Rama: `feat/oficina-3d` (solo local, sin push). Hacer merge a `main` publica en 
 | `office3d/architecture.js` | Paredes, ventanal con skyline, cristaleras y mamparas |
 | `office3d/furniture.js` | Kits instanciados: puesto, silla, pantalla de área, planta, mesa |
 | `office3d/layout.js` | Funciones puras: validación, límites de cámara, encuadre, distribución |
+| `office3d/agents.js` | Personas sentadas, poses y animación por estado |
+| `office3d/status.js` | Adaptador puro de `status.json`: estados, antigüedad, filtros, validación de agentes |
+| `office3d/panel.js` | Ficha de agente, panel de área o sala y aviso de origen de datos |
 | `office3d/perf.js` | Panel de rendimiento y benchmark |
 | `office3d/webgl.js` | Detección de WebGL |
 | `config/departments.json` | Oficina, áreas, puestos, pantallas, salas, plantas y pasillos |
+| `config/agents.json` | Nombre, cargo, función y aspecto de cada agente; umbral de dato antiguo |
+| `config/status.demo.json` | Fixture de demostración (`?status=demo`), marcado como demo |
 | `tests/*.test.js` | Tests (`npm test`) |
 
 ## Uso
@@ -40,7 +45,7 @@ npm run serve        # http://localhost:8123/3d.html
 npm test
 ```
 
-Parámetros: `?q=low` (sin sombras ni antialias, pixel ratio 1) · `?perf=1` (panel de rendimiento) · `?stress=N` (N escritorios extra sin dueño, máx. 240) · `?view=2d`.
+Parámetros: `?status=demo` (fixture de demostración) · `?q=low` (sin sombras ni antialias, pixel ratio 1) · `?perf=1` (panel de rendimiento) · `?stress=N` (N escritorios extra sin dueño, máx. 240) · `?view=2d`.
 Teclas: arrastrar = desplazar · rueda = zoom hacia el cursor · botón derecho = girar · flechas = desplazar · `+`/`-` · `Esc`/`0` = vista general · `P` = rendimiento · `B` = benchmark de 5 s.
 
 ## Fase 1 — escena base ✅
@@ -105,11 +110,59 @@ Los draw calls no crecen con el número de muebles gracias al instancing (un dra
 `npm test` → 22/22 en verde. Nuevos: puestos fuera de su área, plantas sobre puestos, sala que invade un área, mampara inválida, ids duplicados entre áreas y salas, sillas de la sala (dentro, orientadas a la mesa, sin chocar), efecto de las paredes en el encuadre y regla de solape de escritorios.
 Comprobado a mano: vista general, selección de la sala (etiqueta) y de Control de Riesgo (vuelo de cámara y panel), y sin errores nuevos en consola.
 
+## Fase 3 — personas y puestos ✅
+
+Terminado:
+- **Una persona sentada por agente** en su puesto, hecha con primitivas: piernas, torso, cabeza con tres peinados (`short`, `bun`, `long`) y brazos articulados. Piel, pelo, traje y camisa salen de `config/agents.json`. Son cinco mallas por persona con un material de colores por vértice: unos 30 draw calls para todo el reparto.
+- **Estado real desde `status.json`**, mediante el adaptador puro `office3d/status.js` (adelantado de la Fase 5 para no simular actividad):
+  - `WORKING` → `running`, `IDLE` → `idle`, y además `WAITING`, `ERROR`, `DISABLED`, etc. Un estado no reconocido → `unknown`, con el valor original visible.
+  - Un agente que no aparece → `disabled` ("no aparece en status.json"). Si falla la lectura → `unknown` con el error.
+  - **Dato antiguo** si `team.as_of` supera `stale_after_minutes` (120 por defecto) o no lleva zona horaria. Formato admitido: `2026-10-13 20:01 ICT` o ISO.
+- **Poses según el estado**, sin fingir actividad:
+
+  | Estado | Pose |
+  |---|---|
+  | `running` con dato reciente | Teclea: oscilación discreta de brazos y cabeza |
+  | `running` con dato antiguo | Sentado frente a las pantallas, **quieto** |
+  | `idle`, `waiting`, `success`, `degraded`, `unknown` | Recostado, manos en el regazo |
+  | `disabled` | Cabizbajo y oscurecido |
+  | `error`, `degraded`, `unknown` | Además, un anillo de color en el suelo |
+
+- **Etiqueta sobre cada agente** (píldora con punto de estado y rombo lima, como en la referencia), con la marca "antiguo" o "demo". Los nombres de área pasan a un rótulo discreto al fondo de cada área.
+- **Ficha del agente** (clic en la persona, su etiqueta o desde el panel del área): nombre, cargo, área, identificador, función, estado y avisos, tarea actual (texto original), hora de actualización local y antigüedad, y enlaces a `status.json` y a su historial en GitHub. Último resultado, latencia, errores y métricas aparecen como **"No disponible en status.json"**, porque esos datos no existen todavía.
+- **Filtros por estado** con recuento (Todos, Trabajando, Inactivos, Error/degradado, Desactivados, Datos antiguos): atenúan a las personas y etiquetas que no coinciden.
+- **Origen de los datos** en la barra superior: `status.json · hace 8 d · ANTIGUO`, `sin conexión` o `DATOS DE DEMOSTRACIÓN`. Se relee cada 60 s.
+- **Modo demo** `?status=demo`: carga `config/status.demo.json`, marcado como demo en la barra, en las etiquetas y en la ficha. Sirve para ver todos los estados (teclear, error, desactivado…).
+- **Rendimiento:** solo se anima a quien está en `running` con dato reciente; esa animación está limitada a ~30 fps y sin animaciones no se redibuja nada. Se respeta `prefers-reduced-motion`.
+- Zoom máximo ampliado a 10 y acercamiento al agente a 7.
+
+Estado real hoy: `status.json` es del 13-10-2026 20:01 ICT (unos 8 días), así que **los seis agentes salen como dato antiguo y nadie se anima**. Risk Watch y Ops figuran como `WORKING` en el archivo y se muestran en pose de trabajo, quietos.
+
+Provisional:
+- Los personajes son estilizados y de baja poligonización; no se parecen al realismo de la imagen de referencia. Para eso harían falta modelos 3D con licencia (GLB), que se pueden cambiar dentro de `agents.js` sin tocar el resto.
+- No hay animaciones de caminar ni de reunión: personajes fijos en su puesto, como pedía la especificación para la primera entrega.
+- La tarea se muestra en inglés porque así llega en `status.json` (`task_en`).
+
+### Rendimiento medido (21-10-2026, navegador integrado, 629×558, DPR 1)
+
+| Escena | Draw calls | Triángulos | Carga | Resultado |
+|---|---|---|---|---|
+| Datos reales (nadie anima) | 81 | 39.484 | ~890 ms | **0 frames en 3 s** sin interacción |
+| `?status=demo` (2 tecleando) | 81 | 39.484 | ~980 ms | 91 frames en 3 s (≈30 fps, límite activo) |
+| Bench 5 s, demo con filtro | 81 | 39.484 | — | 60,0 FPS · p95 16,8 ms · peor 16,8 ms |
+| Bench 5 s, demo sin filtro | 81 | 39.484 | — | 59,2 FPS · p95 16,8 ms · peor 66,7 ms (pico aislado) |
+
+Corregido durante la medición: al filtrar se producía un frame de 500 ms porque cambiar `transparent` en los materiales obligaba a recompilar shaders. Ahora los materiales de las personas son siempre transparentes y solo cambia la opacidad.
+
+### Tests
+
+`npm test` → 33/33 en verde. Nuevos (`tests/status.test.js`): mapeo de estados, lectura de `as_of` (ICT, ISO y sin zona), `status.json` real como dato antiguo, solo anima `WORKING` con dato reciente, umbral de antigüedad, agente ausente, estado desconocido, fallo de lectura, fixture demo, formato de antigüedad, filtros y validación de `config/agents.json`.
+Comprobado a mano: etiquetas y estados reales, ficha de Quant, demo con Quant tecleando y Risk Watch en error, filtro "Error / degradado" y sin errores en consola.
+
 ## Pendiente (siguientes fases)
 
-- **Fase 3:** personajes estilizados sentados, animaciones según el estado real, ficha de agente y filtros.
 - **Fase 4:** monitores con paneles 2D: equity, ranking y P&L reales con su fuente y hora; todo lo demás marcado **DEMO**.
-- **Fase 5:** adaptador de `status.json` (`WORKING` → `running`, `IDLE` → `idle`, más de 2 h → datos antiguos, ausente → `disabled`) e insignia de modo MOCK/PAPER.
+- **Fase 5:** el adaptador de estado ya existe (Fase 3); falta el panel de sistemas (`systems`), las métricas por rol y la insignia de modo MOCK/PAPER.
 - **Fase 6/7:** documentar qué depende del backend externo (riesgo, paper trading, latencias) y optimizar.
 
 ## Seguridad

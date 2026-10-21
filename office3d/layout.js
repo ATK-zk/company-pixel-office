@@ -2,7 +2,7 @@
 // World units are metres; the office floor is centred on the origin (x → east, z → south).
 // A desk at (x, z) spans x ± 0.9 and z − 0.5 … z + 1.2 (monitors on the north edge, chair to the south).
 
-export const ZOOM = { min: 0.6, max: 6, overview: 1 };
+export const ZOOM = { min: 0.6, max: 10, overview: 1 };
 export const VIEW = { polar: 55, azimuth: 32 }; // default isometric angles, degrees
 export const SIDES = ['north', 'south', 'east', 'west'];
 

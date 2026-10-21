@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "stale_after_minutes": 120,
+  "agents": {
+    "lead":   { "name": "Desk Lead",  "role": "Jefe de mesa",               "duty": "Coordina al equipo y es el único que habla con el CEO.",
+                "look": { "skin": "#c99a76", "hair": "#2a1d14", "hair_style": "short", "suit": "#17191d", "shirt": "#d9dde3" } },
+    "quant":  { "name": "Quant",      "role": "Estrategia y motor",         "duty": "Escribe y despliega el código de estrategia y del motor.",
+                "look": { "skin": "#e0b49a", "hair": "#4a2f1d", "hair_style": "short", "suit": "#1a1c21", "shirt": "#2b3a4a" } },
+    "critic": { "name": "Critic",     "role": "Revisión de código",         "duty": "Revisa el código y aprueba los hashes de los archivos.",
+                "look": { "skin": "#8d5b3e", "hair": "#0f0c0a", "hair_style": "bun",   "suit": "#131417", "shirt": "#c9ccd2" } },
+    "risk":   { "name": "Risk Watch", "role": "Salud y límite de pérdidas", "duty": "Vigila los health checks y el límite de pérdida diaria del 15 %.",
+                "look": { "skin": "#f0c8ac", "hair": "#6b4a2b", "hair_style": "short", "suit": "#1d1f24", "shirt": "#e6e8ec" } },
+    "scout":  { "name": "Scout",      "role": "Ideas de trading",           "duty": "Busca ideas de trading.",
+                "look": { "skin": "#d6a582", "hair": "#1a1410", "hair_style": "long",  "suit": "#15161a", "shirt": "#3a2f45" } },
+    "ops":    { "name": "Ops",        "role": "Libro mayor e informes",     "duty": "Libro mayor, informe diario de las 07:30 y comparación entre lo esperado y lo real.",
+                "look": { "skin": "#b07a55", "hair": "#2a2420", "hair_style": "short", "suit": "#191b20", "shirt": "#cfd3d9" } }
+  }
+}

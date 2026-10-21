@@ -1,0 +1,12 @@
+{
+  "demo": true,
+  "note": "DEMO FIXTURE for 3d.html?status=demo. Not produced by any agent; the 3D office labels it as demo data.",
+  "team": {
+    "as_of": "demo",
+    "lead":   { "state": "WORKING", "role": "Team lead",          "task_en": "[DEMO] Reviewing the morning plan" },
+    "quant":  { "state": "WORKING", "role": "Strategy & engine",  "task_en": "[DEMO] Running a backtest" },
+    "critic": { "state": "IDLE",    "role": "Code review",        "task_en": "[DEMO] Waiting for a build" },
+    "risk":   { "state": "ERROR",   "role": "Health & loss cap",  "task_en": "[DEMO] Health check failed" },
+    "scout":  { "state": "WAITING", "role": "Trading ideas",      "task_en": "[DEMO] Waiting for a data source" }
+  }
+}
