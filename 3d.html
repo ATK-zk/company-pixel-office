@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06080a">
+<title>Trading HQ — Oficina 3D (prototipo)</title>
+<meta name="description" content="Prototipo 3D de la oficina de trading. Fase 1: escena, áreas y cámara, sin datos de agentes.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4l8 12-8 12-8-12z' fill='%23c6ff3d'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="office3d/office3d.css?v=1">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head><body>
+<main id="stage" aria-label="Oficina 3D"></main>
+
+<header id="bar">
+  <b class="brand"><i></i>Trading HQ</b>
+  <span class="badge" title="Fase 1: escena, áreas y cámara. Los agentes y sus datos se conectan en fases posteriores.">PROTOTIPO · FASE 1 · sin datos de agentes</span>
+  <a class="link" href="index.html">Vista 2D clásica</a>
+</header>
+
+<nav id="depts" aria-label="Áreas de la oficina"></nav>
+
+<nav id="ctrl" aria-label="Controles de cámara">
+  <button id="zin" type="button" title="Acercar (+)" aria-label="Acercar">+</button>
+  <button id="zout" type="button" title="Alejar (−)" aria-label="Alejar">−</button>
+  <button id="zreset" type="button" title="Vista general (Esc)" aria-label="Volver a la vista general">⌂</button>
+  <button id="perfBtn" type="button" title="Rendimiento (P) · benchmark (B)" aria-label="Mostrar rendimiento">fps</button>
+</nav>
+
+<aside id="panel" hidden aria-live="polite">
+  <button id="pClose" type="button" aria-label="Cerrar y volver a la vista general">×</button>
+  <h2 id="pName"></h2>
+  <dl>
+    <dt>Agente asignado</dt><dd id="pAgent"></dd>
+    <dt>Estado</dt><dd class="na">Sin conectar — se vincula a status.json en la Fase 5</dd>
+  </dl>
+</aside>
+
+<pre id="perf" hidden aria-live="off"></pre>
+<p id="hint">Arrastrar: desplazar · Rueda: zoom · Botón derecho: girar · Clic en un área: acercar · Esc: vista general</p>
+
+<div id="loader" role="status"><div><span id="ldMsg">Abriendo la oficina</span><i><u id="ldBar"></u></i></div></div>
+<div id="error" role="alert" hidden><div>
+  <h1 id="errTitle"></h1><p id="errDetail"></p>
+  <p><a href="index.html">Abrir la vista 2D clásica</a> · <a href="3d.html">Reintentar</a> · <a href="3d.html?q=low">Calidad baja</a></p>
+</div></div>
+<script type="module" src="office3d/boot.js?v=1"></script>
+</body></html>

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "office": { "width": 48, "depth": 32 },
+  "departments": [
+    { "id": "research",  "name": "Investigación y Noticias", "agent": "scout",  "color": "#ffb35c", "rect": [-22.5, -14, -9.5, -2], "seat": [-16, -8, 0] },
+    { "id": "quant",     "name": "Quant & Data",             "agent": "quant",  "color": "#5ef2d6", "rect": [-6.5, -14, 6.5, -2],   "seat": [0, -8, 0] },
+    { "id": "strategy",  "name": "Estrategia",               "agent": "lead",   "color": "#e2b657", "rect": [9.5, -14, 22.5, -2],   "seat": [16, -8, 0] },
+    { "id": "risk",      "name": "Control de Riesgo",        "agent": "risk",   "color": "#ff7a85", "rect": [-22.5, 2, -9.5, 14],   "seat": [-16, 8, 0] },
+    { "id": "execution", "name": "Ejecución",                "agent": "ops",    "color": "#8fb4ff", "rect": [-6.5, 2, 6.5, 14],     "seat": [0, 8, 0] },
+    { "id": "oversight", "name": "Supervisión y Auditoría",  "agent": "critic", "color": "#c79bff", "rect": [9.5, 2, 22.5, 14],     "seat": [16, 8, 0] }
+  ],
+  "aisles": [
+    [-24, 0, 24, 0],
+    [-8, -16, -8, 16],
+    [8, -16, 8, 16],
+    [-24, -16, 24, -16],
+    [-24, 16, 24, 16],
+    [-24, -16, -24, 16],
+    [24, -16, 24, 16]
+  ]
+}
