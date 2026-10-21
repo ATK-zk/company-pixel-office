@@ -1,21 +1,42 @@
 {
-  "version": 1,
-  "office": { "width": 48, "depth": 32 },
+  "version": 2,
+  "office": { "width": 52, "depth": 40, "wall_height": 4 },
   "departments": [
-    { "id": "research",  "name": "Investigación y Noticias", "agent": "scout",  "color": "#ffb35c", "rect": [-22.5, -14, -9.5, -2], "seat": [-16, -8, 0] },
-    { "id": "quant",     "name": "Quant & Data",             "agent": "quant",  "color": "#5ef2d6", "rect": [-6.5, -14, 6.5, -2],   "seat": [0, -8, 0] },
-    { "id": "strategy",  "name": "Estrategia",               "agent": "lead",   "color": "#e2b657", "rect": [9.5, -14, 22.5, -2],   "seat": [16, -8, 0] },
-    { "id": "risk",      "name": "Control de Riesgo",        "agent": "risk",   "color": "#ff7a85", "rect": [-22.5, 2, -9.5, 14],   "seat": [-16, 8, 0] },
-    { "id": "execution", "name": "Ejecución",                "agent": "ops",    "color": "#8fb4ff", "rect": [-6.5, 2, 6.5, 14],     "seat": [0, 8, 0] },
-    { "id": "oversight", "name": "Supervisión y Auditoría",  "agent": "critic", "color": "#c79bff", "rect": [9.5, 2, 22.5, 14],     "seat": [16, 8, 0] }
+    { "id": "research", "name": "Investigación y Noticias", "agent": "scout", "color": "#ffb35c",
+      "rect": [-24.5, -11, -10.5, 0], "seat": [-17.5, -3.3, 0],
+      "free_desks": [[-20.5, -7.7, 0], [-14.5, -7.7, 0]], "display": [-17.5, -10.2, 0] },
+    { "id": "quant", "name": "Quant & Data", "agent": "quant", "color": "#5ef2d6",
+      "rect": [-7, -11, 7, 0], "seat": [0, -3.3, 0],
+      "free_desks": [[-3, -7.7, 0], [3, -7.7, 0]], "display": [0, -10.2, 0] },
+    { "id": "strategy", "name": "Estrategia", "agent": "lead", "color": "#e2b657",
+      "rect": [10.5, -11, 24.5, 0], "seat": [17.5, -3.3, 0],
+      "free_desks": [[14.5, -7.7, 0], [20.5, -7.7, 0]], "display": [17.5, -10.2, 0] },
+    { "id": "risk", "name": "Control de Riesgo", "agent": "risk", "color": "#ff7a85",
+      "rect": [-24.5, 4, -10.5, 15], "seat": [-17.5, 11.7, 0],
+      "free_desks": [[-20.5, 7.3, 0], [-14.5, 7.3, 0]], "display": [-17.5, 4.8, 0],
+      "partition": { "height": 1.1, "door": "east", "door_width": 3 } },
+    { "id": "execution", "name": "Ejecución", "agent": "ops", "color": "#8fb4ff",
+      "rect": [-7, 4, 7, 15], "seat": [0, 11.7, 0],
+      "free_desks": [[-3, 7.3, 0], [3, 7.3, 0]], "display": [0, 4.8, 0] },
+    { "id": "oversight", "name": "Supervisión y Auditoría", "agent": "critic", "color": "#c79bff",
+      "rect": [10.5, 4, 24.5, 15], "seat": [17.5, 11.7, 0],
+      "free_desks": [[14.5, 7.3, 0], [20.5, 7.3, 0]], "display": [17.5, 4.8, 0] }
+  ],
+  "rooms": [
+    { "id": "meeting", "name": "Sala de reuniones", "rect": [10.5, -19.5, 24.5, -13.5], "door": "south", "door_width": 2.4, "seats": 6 }
+  ],
+  "plants": [
+    [-23.6, -10.2], [-11.4, -10.2], [-6.1, -10.2], [6.1, -10.2], [11.4, -10.2], [23.6, -10.2],
+    [-11.4, 14.2], [-6.1, 14.2], [6.1, 14.2], [11.4, 14.2], [23.6, 14.2],
+    [-24.6, -18.6], [-16, -18.6], [-7, -18.6], [2, -18.6], [8.2, -18.6]
   ],
   "aisles": [
-    [-24, 0, 24, 0],
-    [-8, -16, -8, 16],
-    [8, -16, 8, 16],
-    [-24, -16, 24, -16],
-    [-24, 16, 24, 16],
-    [-24, -16, -24, 16],
-    [24, -16, 24, 16]
+    [-26, -12, 26, -12],
+    [-26, 2, 26, 2],
+    [-26, 17.5, 26, 17.5],
+    [-8.75, -12, -8.75, 20],
+    [8.75, -12, 8.75, 20],
+    [-26, 20, 26, 20],
+    [26, -20, 26, 20]
   ]
 }

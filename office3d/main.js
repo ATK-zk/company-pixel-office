@@ -1,12 +1,14 @@
-// Phase 1 of the 3D office: floor, six areas, isometric camera, lighting and instanced workstations.
-// No agent data yet — nothing in this scene represents real activity (Phase 5 connects status.json).
+// 3D office scene. Phase 1: floor, isometric camera, lighting. Phase 2: full floor plan from config (desks,
+// area displays, meeting room, walls, plants). No agent data yet — nothing here represents real activity
+// (Phase 5 connects status.json; Phase 4 puts labelled panels on the screens).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { validateDepartments, officeBounds, clampTarget, clampZoom, focusFor, overviewFrustum, easeInOut, workstationTransforms, ZOOM, VIEW } from './layout.js';
-import { buildWorkstations } from './furniture.js';
+import { validateDepartments, officeBounds, clampTarget, clampZoom, focusFor, overviewFrustum, easeInOut, workstationTransforms, roomFurniture, ZOOM, VIEW } from './layout.js';
+import { createMaterials, workstationKit, chairKit, displayKit, plantKit, tableKit, buildKit } from './furniture.js';
+import { buildArchitecture } from './architecture.js';
 import { createPerf } from './perf.js';
 
 const LIME = 0xc6ff3d, BG = 0x06080a, CAM_DIST = 90;
@@ -84,13 +86,18 @@ export async function start({ root, params, progress, onFatal }) {
   key.position.set(14, 34, 18);
   if (shadows) {
     key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
-    Object.assign(key.shadow.camera, { left: -32, right: 32, top: 26, bottom: -26, near: 1, far: 90 });
+    Object.assign(key.shadow.camera, { left: -36, right: 36, top: 30, bottom: -30, near: 1, far: 110 });
     key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03;
   }
   scene.add(key);
   for (const d of cfg.departments) {
     const s = new THREE.SpotLight(0xffe2bd, 140, 18, deg(40), 0.85, 1.6);
     s.position.set(d.seat[0] + 1, 8, d.seat[1] + 2); s.target.position.set(d.seat[0], 0.7, d.seat[1]);
+    scene.add(s, s.target);
+  }
+  for (const rm of cfg.rooms || []) {
+    const [x0, z0, x1, z1] = rm.rect, s = new THREE.SpotLight(0xffe2bd, 110, 16, deg(50), 0.9, 1.6);
+    s.position.set((x0 + x1) / 2 + 1, 7, (z0 + z1) / 2 + 2); s.target.position.set((x0 + x1) / 2, 0.7, (z0 + z1) / 2);
     scene.add(s, s.target);
   }
 
@@ -107,26 +114,59 @@ export async function start({ root, params, progress, onFatal }) {
     scene.add(new THREE.Mesh(halo, new THREE.MeshBasicMaterial({ color: LIME, transparent: true, opacity: 0.09, depthWrite: false, blending: THREE.AdditiveBlending })));
   }
 
-  // ---- areas: tinted pad (also the click target), outline, floating label ----
+  // ---- zones (areas + rooms): tinted pad (also the click target), outline, floating label ----
+  const ROOM_COLOR = '#9aa6b5';
+  const zones = cfg.departments.map(d => ({ ...d, kind: 'dept' }))
+    .concat((cfg.rooms || []).map(r => ({ ...r, kind: 'room', color: ROOM_COLOR, agent: null })));
   const pads = [], labelEls = new Map();
-  for (const d of cfg.departments) {
-    const [x0, z0, x1, z1] = d.rect, col = new THREE.Color(d.color);
-    const pad = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.025, depthWrite: false }));
-    pad.rotation.x = -Math.PI / 2; pad.position.set((x0 + x1) / 2, 0.006, (z0 + z1) / 2); pad.userData.dept = d;
-    pad.add(new THREE.LineSegments(new THREE.EdgesGeometry(pad.geometry), new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.3 })));
+  for (const z of zones) {
+    const [x0, z0, x1, z1] = z.rect, col = new THREE.Color(z.color), room = z.kind === 'room';
+    const pad = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), room
+      ? new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.95 })
+      : new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.025, depthWrite: false }));
+    pad.rotation.x = -Math.PI / 2; pad.position.set((x0 + x1) / 2, 0.006, (z0 + z1) / 2); pad.receiveShadow = room && shadows;
+    pad.userData.zone = z;
+    if (!room) pad.add(new THREE.LineSegments(new THREE.EdgesGeometry(pad.geometry), new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.3 })));
     scene.add(pad); pads.push(pad);
     const el = document.createElement('button');
-    el.type = 'button'; el.className = 'zl'; el.style.setProperty('--c', d.color);
-    el.append(Object.assign(document.createElement('span'), { textContent: d.name }), document.createElement('i'));
-    el.addEventListener('click', () => select(d));
-    const lbl = new CSS2DObject(el); lbl.position.set(d.seat[0], 3.1, d.seat[1] - 0.3); scene.add(lbl);
-    labelEls.set(d.id, el);
+    el.type = 'button'; el.className = 'zl' + (room ? ' room' : ''); el.style.setProperty('--c', z.color);
+    el.append(Object.assign(document.createElement('span'), { textContent: z.name }), document.createElement('i'));
+    el.addEventListener('click', () => select(z));
+    const lbl = new CSS2DObject(el);
+    if (room) lbl.position.set((x0 + x1) / 2, (cfg.office.wall_height || 4) - 0.2, (z0 + z1) / 2); else lbl.position.set(z.seat[0], 3.1, z.seat[1] - 0.3);
+    scene.add(lbl); labelEls.set(z.id, el);
   }
+  const zoneById = id => zones.find(z => z.id === id);
 
-  // ---- workstations (one per agent seat, plus ?stress=N unowned desks) ----
+  // ---- shell + furniture, all instanced from config ----
+  progress(0.7, 'Amueblando las áreas');
+  scene.add(buildArchitecture(cfg, renderer, { shadows }));
+  const mats = createMaterials(), opts = { shadows };
   const desks = workstationTransforms(cfg, Number(params.get('stress')) || 0);
-  const ws = buildWorkstations(desks, { shadows });
-  scene.add(ws.group);
+  const ownedDesks = desks.filter(d => d.on), freeDesks = desks.filter(d => !d.on);
+  const owned = buildKit('desks-owned', workstationKit(mats, mats.screenOn), ownedDesks, opts);
+  const free = buildKit('desks-free', workstationKit(mats, mats.screenOff), freeDesks, opts);
+  const displays = cfg.departments.filter(d => d.display).map(d => ({ x: d.display[0], z: d.display[1], rotY: d.display[2] || 0, dept: d.id }));
+  const disp = buildKit('area-displays', displayKit(mats), displays, opts);
+  scene.add(owned.group, free.group, disp.group);
+  scene.add(buildKit('plants', plantKit(mats), (cfg.plants || []).map(([x, z]) => ({ x, z, rotY: (x * 7 + z * 3) % 6.28 })), opts).group);
+  const roomPick = [];
+  for (const rm of cfg.rooms || []) {
+    const f = roomFurniture(rm);
+    const t = buildKit('room-table', tableKit(mats, f.table.w, f.table.d), [f.table], opts);
+    const c = buildKit('room-chairs', chairKit(mats), f.chairs, opts);
+    // Summary screen: standby glow until Phase 4 gives it a labelled panel.
+    const scr = new THREE.Group();
+    const bez = new THREE.Mesh(new THREE.BoxGeometry(f.screen.w + 0.08, f.screen.w * 0.56 + 0.08, 0.06), mats.bezel);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(f.screen.w, f.screen.w * 0.56), mats.standby); face.position.z = 0.032;
+    scr.add(bez, face); scr.position.set(f.screen.x, 1.9, f.screen.z);
+    scene.add(t.group, c.group, scr);
+    for (const m of [...t.meshes, ...c.meshes]) { m.userData.zone = zoneById(rm.id); roomPick.push(m); }
+  }
+  // instanced meshes → zone of the clicked instance
+  const pickables = [...pads, ...roomPick];
+  for (const [kit, list] of [[owned, ownedDesks], [free, freeDesks], [disp, displays]])
+    for (const m of kit.meshes) { m.userData.instanceZone = i => zoneById(list[i].dept); pickables.push(m); }
 
   // ---- on-demand render loop ----
   let raf = 0, tween = null, disposed = false, loadMs = 0;
@@ -170,13 +210,20 @@ export async function start({ root, params, progress, onFatal }) {
   const panel = $('panel');
   function select(d) {
     selected = d;
-    for (const p of pads) p.material.opacity = d && p.userData.dept === d ? 0.08 : 0.025;
+    for (const p of pads) if (p.userData.zone.kind === 'dept') p.material.opacity = d && p.userData.zone.id === d.id ? 0.08 : 0.025;
     for (const [id, el] of labelEls) el.classList.toggle('sel', !!d && id === d.id);
     document.querySelectorAll('#depts button').forEach(b => b.setAttribute('aria-pressed', String(!!d && b.dataset.id === d.id)));
     if (d) {
       const f = focusFor(d, cfg.office); flyTo(f.x, f.z, f.zoom);
       $('pName').textContent = d.name; $('pName').style.color = d.color;
-      $('pAgent').textContent = d.agent;
+      if (d.kind === 'room') {
+        $('pAgent').textContent = '— (sala compartida)';
+        $('pState').textContent = 'Pantalla de resumen en espera: se conecta en la Fase 4';
+      } else {
+        const nFree = (d.free_desks || []).length;
+        $('pAgent').textContent = d.agent;
+        $('pState').textContent = `Sin conectar: se vincula a status.json en la Fase 5 · ${1 + nFree} puestos (${nFree} libres)`;
+      }
       panel.hidden = false;
     } else panel.hidden = true;
     invalidate();
@@ -184,7 +231,8 @@ export async function start({ root, params, progress, onFatal }) {
   function recenter() { select(null); flyTo(0, 0, ZOOM.overview, { offset: homeOffset }); }
 
   const list = $('depts');
-  for (const d of cfg.departments) {
+  for (const d of zones) {
+    if (d.kind === 'room' && !list.querySelector('hr')) list.append(document.createElement('hr'));
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.id = d.id; b.setAttribute('aria-pressed', 'false'); b.style.setProperty('--c', d.color);
     b.append(document.createElement('i'), Object.assign(document.createElement('span'), { textContent: d.name }));
@@ -206,9 +254,9 @@ export async function start({ root, params, progress, onFatal }) {
     const r = el.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
-    const hit = ray.intersectObjects([...ws.meshes, ...pads], false)[0];
+    const hit = ray.intersectObjects(pickables, false)[0];
     if (!hit) return;
-    const d = hit.object.isInstancedMesh ? cfg.departments.find(x => x.id === desks[hit.instanceId].dept) : hit.object.userData.dept;
+    const u = hit.object.userData, d = u.instanceZone ? u.instanceZone(hit.instanceId) : u.zone;
     if (d) select(d);
   };
   el.addEventListener('pointerdown', onDown); el.addEventListener('pointerup', onUp);

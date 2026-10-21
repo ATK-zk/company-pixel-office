@@ -24,12 +24,13 @@ Rama: `feat/oficina-3d` (solo local, sin push). Hacer merge a `main` publica en 
 |---|---|
 | `3d.html` | Página 3D: import map, HUD, carga y error |
 | `office3d/boot.js` | Comprueba WebGL 2, carga la escena y gestiona errores y fallback |
-| `office3d/main.js` | Escena, luces, cámara, selección y bucle de render bajo demanda |
-| `office3d/furniture.js` | Puestos instanciados (escritorio, 3 monitores, teclado, silla) |
+| `office3d/main.js` | Escena, luces, cámara, zonas (áreas y salas), selección y bucle de render bajo demanda |
+| `office3d/architecture.js` | Paredes, ventanal con skyline, cristaleras y mamparas |
+| `office3d/furniture.js` | Kits instanciados: puesto, silla, pantalla de área, planta, mesa |
 | `office3d/layout.js` | Funciones puras: validación, límites de cámara, encuadre, distribución |
 | `office3d/perf.js` | Panel de rendimiento y benchmark |
 | `office3d/webgl.js` | Detección de WebGL |
-| `config/departments.json` | Áreas, asientos y pasillos |
+| `config/departments.json` | Oficina, áreas, puestos, pantallas, salas, plantas y pasillos |
 | `tests/*.test.js` | Tests (`npm test`) |
 
 ## Uso
@@ -72,9 +73,40 @@ Los FPS están limitados a 60 por vsync. La carga no incluye la descarga de thre
 `npm test` → 17/17 en verde: validación de la configuración y del reparto, existencia de los agentes en `status.json`, límites de cámara y zoom, encuadre, frustum en pantallas anchas y verticales, easing, distribución sin solapes y detección de WebGL.
 Comprobado a mano en el navegador: carga, selección, zoom, diseño estrecho, redirección `?view=2d` y error con la configuración ausente (HTTP 404). Sin errores en consola.
 
+## Fase 2 — plano y departamentos ✅
+
+Terminado:
+- **Plano de 52 × 40 m** en `config/departments.json` (versión 2): dos filas de tres áreas de 14 × 11 m, pasillos de 3,5 m con líneas lima, franja trasera con la sala de reuniones y paseo frontal.
+- **Puestos por área:** el puesto del agente (fila delantera, pantallas encendidas) y dos puestos libres (fila trasera, **pantallas apagadas**, para que no parezcan ocupados). Todos salen de `seat` y `free_desks` en la configuración.
+- **Pantalla común por área** (`display`), sobre pie, en espera hasta la Fase 4.
+- **Control de Riesgo diferenciado** con una mampara de cristal de 1,1 m y entrada por el pasillo este (`partition`).
+- **Sala de reuniones acristalada** (`rooms`) con moqueta, mesa, 6 sillas orientadas a la mesa y pantalla de resumen en espera. Se puede seleccionar desde su etiqueta, la lista o con un clic, y tiene su propio foco de luz.
+- **Envolvente:** pared norte con ventanal y skyline nocturno procedural (decorativo, no son datos); pared oeste con tiras de luz cálida verticales. Los lados sur y este quedan abiertos (vista en corte) para que la cámara isométrica nunca quede tapada.
+- **16 plantas**, instanciadas.
+- **Validación ampliada:** puestos dentro de su área y sin solapes, pantallas y plantas sin pisar puestos, salas sin invadir áreas, ids únicos entre áreas y salas, mamparas con puerta válida.
+- El panel de detalle indica el número de puestos (libres y asignado) y el estado pendiente; para la sala, que es compartida y su pantalla está en espera.
+
+Provisional:
+- Los monitores de los puestos asignados brillan siempre: hasta la Fase 5 **no reflejan si el agente trabaja**.
+- Las pantallas de área y de la sala muestran un brillo de espera sin contenido.
+- `boot.js` importa `main.js` sin parámetro de versión; en GitHub Pages podría servirse un módulo antiguo desde caché tras publicar. Queda para la Fase 7 (cache busting).
+
+### Rendimiento medido (21-10-2026, mismo entorno: navegador integrado, 629×558, DPR 1)
+
+| Escena | Escritorios | Draw calls | Triángulos | Carga | FPS medios (bench 5 s) | p95 | Peor frame |
+|---|---|---|---|---|---|---|---|
+| Plano completo | 18 | 45 | 9.576 | 575 ms | 60,0 | 16,8 ms | 17,1 ms |
+| `?stress=240` (se llena el espacio libre) | 72 | 45 | 26.316 | 551 ms | 60,0 | 16,8 ms | 17,0 ms |
+
+Los draw calls no crecen con el número de muebles gracias al instancing (un draw call por material y kit, más la pasada de sombras). La carga sube respecto a la Fase 1 (≈300 ms) por la textura del skyline y la compilación de más materiales.
+
+### Tests
+
+`npm test` → 22/22 en verde. Nuevos: puestos fuera de su área, plantas sobre puestos, sala que invade un área, mampara inválida, ids duplicados entre áreas y salas, sillas de la sala (dentro, orientadas a la mesa, sin chocar), efecto de las paredes en el encuadre y regla de solape de escritorios.
+Comprobado a mano: vista general, selección de la sala (etiqueta) y de Control de Riesgo (vuelo de cámara y panel), y sin errores nuevos en consola.
+
 ## Pendiente (siguientes fases)
 
-- **Fase 2:** plano completo: varios puestos por área, cristalera, sala de reuniones, plantas y paredes.
 - **Fase 3:** personajes estilizados sentados, animaciones según el estado real, ficha de agente y filtros.
 - **Fase 4:** monitores con paneles 2D: equity, ranking y P&L reales con su fuente y hora; todo lo demás marcado **DEMO**.
 - **Fase 5:** adaptador de `status.json` (`WORKING` → `running`, `IDLE` → `idle`, más de 2 h → datos antiguos, ausente → `disabled`) e insignia de modo MOCK/PAPER.

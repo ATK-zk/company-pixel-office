@@ -66,3 +66,7 @@ button{font:inherit;color:inherit}
   #hint{display:none}
   .badge{order:3}
 }
+.zl.room span{font-size:12px;color:var(--muted)}
+.zl.room i{background:#9aa6b5;box-shadow:none}
+#depts hr{border:0;border-top:1px solid var(--line);margin:3px 6px}
+@media (max-width:760px){#depts hr{border-top:0;border-left:1px solid var(--line);margin:4px 2px}}

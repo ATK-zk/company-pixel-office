@@ -4,9 +4,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#06080a">
 <title>Trading HQ — Oficina 3D (prototipo)</title>
-<meta name="description" content="Prototipo 3D de la oficina de trading. Fase 1: escena, áreas y cámara, sin datos de agentes.">
+<meta name="description" content="Prototipo 3D de la oficina de trading. Fases 1–2: escena, cámara y plano, sin datos de agentes.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4l8 12-8 12-8-12z' fill='%23c6ff3d'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="office3d/office3d.css?v=1">
+<link rel="stylesheet" href="office3d/office3d.css?v=2">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -18,7 +18,7 @@
 
 <header id="bar">
   <b class="brand"><i></i>Trading HQ</b>
-  <span class="badge" title="Fase 1: escena, áreas y cámara. Los agentes y sus datos se conectan en fases posteriores.">PROTOTIPO · FASE 1 · sin datos de agentes</span>
+  <span class="badge" title="Fases 1–2: escena, cámara y plano de la oficina. Los agentes y sus datos se conectan en fases posteriores.">PROTOTIPO · FASE 2 · sin datos de agentes</span>
   <a class="link" href="index.html">Vista 2D clásica</a>
 </header>
 
@@ -36,7 +36,7 @@
   <h2 id="pName"></h2>
   <dl>
     <dt>Agente asignado</dt><dd id="pAgent"></dd>
-    <dt>Estado</dt><dd class="na">Sin conectar — se vincula a status.json en la Fase 5</dd>
+    <dt>Estado</dt><dd id="pState" class="na"></dd>
   </dl>
 </aside>
 
@@ -48,5 +48,5 @@
   <h1 id="errTitle"></h1><p id="errDetail"></p>
   <p><a href="index.html">Abrir la vista 2D clásica</a> · <a href="3d.html">Reintentar</a> · <a href="3d.html?q=low">Calidad baja</a></p>
 </div></div>
-<script type="module" src="office3d/boot.js?v=1"></script>
+<script type="module" src="office3d/boot.js?v=2"></script>
 </body></html>
