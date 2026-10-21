@@ -41,7 +41,9 @@ export function renderAgent(body, { id, meta, dept, status: s, staleMinutes }) {
   body.replaceChildren(head, dl, links, note);
 }
 
-export function renderArea(body, { dept, meta, status: s, onAgent }) {
+const screenButton = onScreen => { const b = h('button', { type: 'button', className: 'agentlink', textContent: 'Ver pantalla →' }); b.addEventListener('click', onScreen); return b; };
+
+export function renderArea(body, { dept, meta, status: s, onAgent, onScreen }) {
   const head = h('header', {}, h('h2', { textContent: dept.name }));
   head.querySelector('h2').style.color = dept.color;
   const dl = h('dl');
@@ -51,15 +53,15 @@ export function renderArea(body, { dept, meta, status: s, onAgent }) {
   row(dl, 'Estado', h('span', { className: 'chips' }, ...stateChips(s)));
   const nFree = (dept.free_desks || []).length;
   row(dl, 'Puestos', `${1 + nFree} (1 asignado, ${nFree} libres)`);
-  row(dl, 'Pantalla del área', 'En espera: se conecta en la Fase 4', 'na');
+  row(dl, 'Pantalla del área', onScreen ? screenButton(onScreen) : 'Sin panel configurado', onScreen ? '' : 'na');
   body.replaceChildren(head, dl);
 }
 
-export function renderRoom(body, { room }) {
+export function renderRoom(body, { room, onScreen }) {
   const dl = h('dl');
   row(dl, 'Uso', 'Sala compartida');
   row(dl, 'Asientos', String(room.seats || 0));
-  row(dl, 'Pantalla de resumen', 'En espera: se conecta en la Fase 4', 'na');
+  row(dl, 'Pantalla de resumen', onScreen ? screenButton(onScreen) : 'Sin panel configurado', onScreen ? '' : 'na');
   body.replaceChildren(h('header', {}, h('h2', { textContent: room.name })), dl);
 }
 

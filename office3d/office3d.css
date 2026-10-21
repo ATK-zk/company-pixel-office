@@ -104,3 +104,27 @@ button{font:inherit;color:inherit}
   .src{order:4}
   #panel{top:auto;max-height:45vh}
 }
+
+/* Phase 4: data panel */
+#dash{position:fixed;right:12px;top:104px;width:380px;max-width:calc(100vw - 24px);max-height:calc(100vh - 180px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+#dash header{margin:0 26px 10px 0}
+#dash h2{margin:0;font-size:17px}
+#dash .sub{margin:4px 0 0;color:var(--muted);font-size:12px}
+#dash dl{margin:0;display:grid;grid-template-columns:minmax(120px,40%) 1fr;gap:7px 12px;font-size:13px}
+#dash dt{color:var(--muted)}
+#dash dt.grp{grid-column:1/-1;color:var(--text);font-weight:600;margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+#dash dd{margin:0}
+#dash dd .v{font-family:var(--mono)}
+#dash dd small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+#dash dd.na .v{color:var(--muted)}
+#dash dd.warn .v{color:#ff5d73}
+#dashClose{position:absolute;top:8px;right:8px;width:30px;height:30px;border:0;border-radius:8px;background:none;font-size:20px;cursor:pointer}
+#ctrl #dataBtn{font:600 15px var(--mono)}
+#ctrl button[aria-pressed=true]{background:rgba(198,255,61,.14);color:var(--lime)}
+@media (max-width:760px){#dash{top:auto;bottom:118px;left:12px;right:12px;width:auto;max-height:50vh}}
+#screenView{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:rgba(3,5,7,.72);padding:16px}
+#screenView .sv{width:min(960px,100%);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+#screenView header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+#screenView canvas{display:block;width:100%;height:auto;border-radius:6px}
+#screenView .note{margin:8px 0 0;font-size:12px;color:var(--muted)}
+#svClose{width:32px;height:32px;border:0;border-radius:8px;background:none;font-size:20px;cursor:pointer}

@@ -12,6 +12,9 @@ import { buildArchitecture } from './architecture.js';
 import { buildAgents } from './agents.js';
 import { agentStatuses, validateAgents, matchesFilter, FILTERS, STATES } from './status.js';
 import { renderAgent, renderArea, renderRoom, renderSource } from './panel.js';
+import { createScreen } from './screens.js';
+import { createMarket } from './data.js';
+import { renderDashboard } from './dashboard.js';
 import { createPerf } from './perf.js';
 
 const LIME = 0xc6ff3d, BG = 0x06080a, CAM_DIST = 90;
@@ -169,22 +172,34 @@ export async function start({ root, params, progress, onFatal }) {
   const displays = cfg.departments.filter(d => d.display).map(d => ({ x: d.display[0], z: d.display[1], rotY: d.display[2] || 0, dept: d.id }));
   const disp = buildKit('area-displays', displayKit(mats), displays, opts);
   scene.add(owned.group, free.group, disp.group);
+  // Phase 4: labelled 2D panels on the area displays (in front of the standby face) and the room screen
+  const screens = [], up = new THREE.Vector3(0, 1, 0);
+  for (const d of cfg.departments) if (d.display && d.panel) {
+    const scr = createScreen(d.panel, d, renderer);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(1.62, 0.92), scr.material);
+    const rot = d.display[2] || 0, local = new THREE.Vector3(0, 1.65, 0.036).applyAxisAngle(up, rot);
+    face.position.set(d.display[0] + local.x, local.y, d.display[1] + local.z); face.rotation.y = rot;
+    face.userData.screen = scr; scene.add(face); screens.push({ scr, face, dept: d });
+  }
   scene.add(buildKit('plants', plantKit(mats), (cfg.plants || []).map(([x, z]) => ({ x, z, rotY: (x * 7 + z * 3) % 6.28 })), opts).group);
   const roomPick = [];
   for (const rm of cfg.rooms || []) {
     const f = roomFurniture(rm);
     const t = buildKit('room-table', tableKit(mats, f.table.w, f.table.d), [f.table], opts);
     const c = buildKit('room-chairs', chairKit(mats), f.chairs, opts);
-    // Summary screen: standby glow until Phase 4 gives it a labelled panel.
+    // Summary screen: a labelled panel when the room names one, otherwise a standby glow.
     const scr = new THREE.Group();
     const bez = new THREE.Mesh(new THREE.BoxGeometry(f.screen.w + 0.08, f.screen.w * 0.56 + 0.08, 0.06), mats.bezel);
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(f.screen.w, f.screen.w * 0.56), mats.standby); face.position.z = 0.032;
+    const panelScr = rm.panel ? createScreen(rm.panel, { ...rm, color: ROOM_COLOR }, renderer) : null;
+    if (panelScr) screens.push({ scr: panelScr, dept: rm });
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(f.screen.w, f.screen.w * 0.56), panelScr ? panelScr.material : mats.standby); face.position.z = 0.032;
+    if (panelScr) { face.userData.screen = panelScr; roomPick.push(face); }
     scr.add(bez, face); scr.position.set(f.screen.x, 1.9, f.screen.z);
     scene.add(t.group, c.group, scr);
     for (const m of [...t.meshes, ...c.meshes]) { m.userData.zone = zoneById(rm.id); roomPick.push(m); }
   }
   // instanced meshes → zone of the clicked instance
-  const pickables = [...pads, ...roomPick];
+  const pickables = [...pads, ...roomPick, ...screens.map(s => s.face).filter(Boolean)];
   for (const [kit, list] of [[owned, ownedDesks], [free, freeDesks], [disp, displays]])
     for (const m of kit.meshes) { m.userData.instanceZone = i => zoneById(list[i].dept); pickables.push(m); }
 
@@ -240,6 +255,10 @@ export async function start({ root, params, progress, onFatal }) {
   const agentIds = cfg.departments.map(d => d.agent);
   const demo = params.get('status') === 'demo';
   let statuses = agentStatuses(null, agentIds, { error: 'cargando' }), filter = 'all';
+  // provider data (public, read-only) for the account named in status.json; demo mode never queries it
+  let lastStatus = null, statusError = null;
+  const market = createMarket({ onChange: () => repaint() });
+  if (demo) market.state.errors.address = 'modo demo: no se consulta el proveedor';
   async function pollStatus() {
     let raw = null, error = null;
     try {
@@ -247,9 +266,17 @@ export async function start({ root, params, progress, onFatal }) {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       raw = await r.json();
     } catch (e) { error = e.message || String(e); }
+    lastStatus = raw; statusError = error;
     statuses = agentStatuses(raw, agentIds, { staleMs: staleMinutes * 60000, error });
     renderSource($('src'), { status: raw, error, statuses });
+    if (!demo && raw) market.setAddress(raw.leaderboard_account);
     applyStatuses();
+  }
+  function repaint() {
+    const model = { statuses, agentsCfg, cfg, status: demo ? null : lastStatus, statusError, market: market.state };
+    for (const s of screens) s.scr.paint(model);
+    if (!$('dash').hidden) renderDashboard($('dashBody'), model);
+    invalidate();
   }
   function applyStatuses() {
     for (const id of agentIds) {
@@ -259,7 +286,7 @@ export async function start({ root, params, progress, onFatal }) {
       el.querySelector('.stale').textContent = s.demo ? ' · demo' : s.stale ? ' · antiguo' : '';
       el.title = `${st.label}${s.stale && !s.demo ? ' (dato antiguo)' : ''}`;
     }
-    applyFilter(); refreshPanel(); invalidate();
+    applyFilter(); refreshPanel(); repaint();
   }
 
   // ---- filters ----
@@ -283,17 +310,24 @@ export async function start({ root, params, progress, onFatal }) {
   // sel is { zone } (area or room) or { agent: id }
   let sel = null;
   const panel = $('panel'), body = $('pBody');
+  // full-size view of a screen's 2D panel (the same canvas the 3D screen uses)
+  const screenOf = z => { const s = screens.find(x => x.dept.id === z.id); return s ? s.scr : null; };
+  const viewer = $('screenView');
+  function openScreen(scr) { $('svCanvas').replaceChildren(scr.canvas); $('svTitle').textContent = scr.title(); viewer.hidden = false; $('svClose').focus(); }
+  function closeScreen() { viewer.hidden = true; $('svCanvas').replaceChildren(); }
+  $('svClose').onclick = closeScreen; viewer.addEventListener('click', e => { if (e.target === viewer) closeScreen(); });
   function refreshPanel() {
-    if (!sel) { panel.hidden = true; return; }
+    if (!sel || !$('dash').hidden) { panel.hidden = true; return; }
     if (sel.agent) {
       const dept = deptOfAgent(sel.agent);
       renderAgent(body, { id: sel.agent, meta: agentsCfg.agents[sel.agent], dept, status: statuses[sel.agent], staleMinutes });
-    } else if (sel.zone.kind === 'room') renderRoom(body, { room: sel.zone });
-    else renderArea(body, { dept: sel.zone, meta: agentsCfg.agents[sel.zone.agent], status: statuses[sel.zone.agent], onAgent: () => select({ agent: sel.zone.agent }) });
+    } else if (sel.zone.kind === 'room') renderRoom(body, { room: sel.zone, onScreen: screenOf(sel.zone) && (() => openScreen(screenOf(sel.zone))) });
+    else renderArea(body, { dept: sel.zone, meta: agentsCfg.agents[sel.zone.agent], status: statuses[sel.zone.agent], onAgent: () => select({ agent: sel.zone.agent }), onScreen: screenOf(sel.zone) && (() => openScreen(screenOf(sel.zone))) });
     panel.hidden = false;
   }
   function select(next) {
     sel = next;
+    if (next) { $('dash').hidden = true; $('dataBtn').setAttribute('aria-pressed', 'false'); }
     const zoneId = !next ? null : next.agent ? deptOfAgent(next.agent).id : next.zone.id;
     for (const p of pads) if (p.userData.zone.kind === 'dept') p.material.opacity = p.userData.zone.id === zoneId ? 0.08 : 0.025;
     for (const [id, el] of labelEls) el.classList.toggle('sel', id === zoneId && !(next && next.agent));
@@ -319,6 +353,9 @@ export async function start({ root, params, progress, onFatal }) {
   $('zin').onclick = () => zoomBy(1.4); $('zout').onclick = () => zoomBy(1 / 1.4); $('zreset').onclick = recenter;
   $('pClose').onclick = recenter;
   $('perfBtn').onclick = () => { perf.toggle(); invalidate(); };
+  const toggleDash = open => { $('dash').hidden = !open; $('dataBtn').setAttribute('aria-pressed', String(open)); if (open) { panel.hidden = true; repaint(); } else refreshPanel(); };
+  $('dataBtn').onclick = () => toggleDash($('dash').hidden);
+  $('dashClose').onclick = () => toggleDash(false);
 
   // click (not drag) on the floor picks the area under the cursor
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let down = null;
@@ -333,6 +370,7 @@ export async function start({ root, params, progress, onFatal }) {
     const hit = ray.intersectObjects(pickables, false)[0];
     if (!hit) return;
     const u = hit.object.userData;
+    if (u.screen) { openScreen(u.screen); return; }
     if (u.agentId) { select({ agent: u.agentId }); return; }
     const d = u.instanceZone ? u.instanceZone(hit.instanceId) : u.zone;
     if (d) select({ zone: d });
@@ -340,7 +378,8 @@ export async function start({ root, params, progress, onFatal }) {
   el.addEventListener('pointerdown', onDown); el.addEventListener('pointerup', onUp);
   const onKey = e => {
     if (e.target.closest && e.target.closest('input,textarea')) return;
-    if (e.key === 'Escape' || e.key === '0') recenter();
+    if (e.key === 'Escape' && !viewer.hidden) closeScreen();
+    else if (e.key === 'Escape' || e.key === '0') recenter();
     else if (e.key === '+' || e.key === '=') zoomBy(1.4);
     else if (e.key === '-') zoomBy(1 / 1.4);
     else if (e.key === 'p' || e.key === 'P') { perf.toggle(); invalidate(); }
@@ -357,7 +396,7 @@ export async function start({ root, params, progress, onFatal }) {
 
   function dispose() {
     if (disposed) return; disposed = true;
-    cancelAnimationFrame(raf); clearInterval(pollTimer); ro.disconnect(); controls.dispose(); removeEventListener('keydown', onKey);
+    cancelAnimationFrame(raf); clearInterval(pollTimer); market.stop(); screens.forEach(s => s.scr.dispose()); ro.disconnect(); controls.dispose(); removeEventListener('keydown', onKey);
     el.removeEventListener('pointerdown', onDown); el.removeEventListener('pointerup', onUp);
     scene.traverse(o => {
       if (o.geometry) o.geometry.dispose();
@@ -374,7 +413,7 @@ export async function start({ root, params, progress, onFatal }) {
   progress(0.9, 'Compilando shaders');
   await renderer.compileAsync(scene, camera);
   loadMs = performance.now() - t0;
-  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, statuses: () => statuses, selectAgent: id => select({ agent: id }), runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
+  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, statuses: () => statuses, selectAgent: id => select({ agent: id }), view: (x, z, zoom) => flyTo(x, z, zoom), market: () => market.state, runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
   if (params.get('perf') === '1') perf.toggle(true);
   invalidate();
   return { dispose, select, recenter };

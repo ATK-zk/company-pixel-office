@@ -4,26 +4,26 @@
   "departments": [
     { "id": "research", "name": "Investigación y Noticias", "agent": "scout", "color": "#ffb35c",
       "rect": [-24.5, -11, -10.5, 0], "seat": [-17.5, -3.3, 0],
-      "free_desks": [[-20.5, -7.7, 0], [-14.5, -7.7, 0]], "display": [-17.5, -10.2, 0] },
+      "free_desks": [[-20.5, -7.7, 0], [-14.5, -7.7, 0]], "display": [-17.5, -10.2, 0], "panel": "news" },
     { "id": "quant", "name": "Quant & Data", "agent": "quant", "color": "#5ef2d6",
       "rect": [-7, -11, 7, 0], "seat": [0, -3.3, 0],
-      "free_desks": [[-3, -7.7, 0], [3, -7.7, 0]], "display": [0, -10.2, 0] },
+      "free_desks": [[-3, -7.7, 0], [3, -7.7, 0]], "display": [0, -10.2, 0], "panel": "quant" },
     { "id": "strategy", "name": "Estrategia", "agent": "lead", "color": "#e2b657",
       "rect": [10.5, -11, 24.5, 0], "seat": [17.5, -3.3, 0],
-      "free_desks": [[14.5, -7.7, 0], [20.5, -7.7, 0]], "display": [17.5, -10.2, 0] },
+      "free_desks": [[14.5, -7.7, 0], [20.5, -7.7, 0]], "display": [17.5, -10.2, 0], "panel": "strategy" },
     { "id": "risk", "name": "Control de Riesgo", "agent": "risk", "color": "#ff7a85",
       "rect": [-24.5, 4, -10.5, 15], "seat": [-17.5, 11.7, 0],
-      "free_desks": [[-20.5, 7.3, 0], [-14.5, 7.3, 0]], "display": [-17.5, 4.8, 0],
+      "free_desks": [[-20.5, 7.3, 0], [-14.5, 7.3, 0]], "display": [-17.5, 4.8, 0], "panel": "risk",
       "partition": { "height": 1.1, "door": "east", "door_width": 3 } },
     { "id": "execution", "name": "Ejecución", "agent": "ops", "color": "#8fb4ff",
       "rect": [-7, 4, 7, 15], "seat": [0, 11.7, 0],
-      "free_desks": [[-3, 7.3, 0], [3, 7.3, 0]], "display": [0, 4.8, 0] },
+      "free_desks": [[-3, 7.3, 0], [3, 7.3, 0]], "display": [0, 4.8, 0], "panel": "execution" },
     { "id": "oversight", "name": "Supervisión y Auditoría", "agent": "critic", "color": "#c79bff",
       "rect": [10.5, 4, 24.5, 15], "seat": [17.5, 11.7, 0],
-      "free_desks": [[14.5, 7.3, 0], [20.5, 7.3, 0]], "display": [17.5, 4.8, 0] }
+      "free_desks": [[14.5, 7.3, 0], [20.5, 7.3, 0]], "display": [17.5, 4.8, 0], "panel": "oversight" }
   ],
   "rooms": [
-    { "id": "meeting", "name": "Sala de reuniones", "rect": [10.5, -19.5, 24.5, -13.5], "door": "south", "door_width": 2.4, "seats": 6 }
+    { "id": "meeting", "name": "Sala de reuniones", "rect": [10.5, -19.5, 24.5, -13.5], "door": "south", "door_width": 2.4, "seats": 6, "panel": "summary" }
   ],
   "plants": [
     [-23.6, -10.2], [-11.4, -10.2], [-6.1, -10.2], [6.1, -10.2], [11.4, -10.2], [23.6, -10.2],

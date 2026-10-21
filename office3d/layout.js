@@ -5,6 +5,7 @@
 export const ZOOM = { min: 0.6, max: 10, overview: 1 };
 export const VIEW = { polar: 55, azimuth: 32 }; // default isometric angles, degrees
 export const SIDES = ['north', 'south', 'east', 'west'];
+export const PANEL_KINDS = ['news', 'quant', 'strategy', 'risk', 'execution', 'oversight', 'summary'];
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
@@ -47,6 +48,8 @@ export function validateDepartments(cfg) {
       if (!isPoint(d.display)) errors.push(`${at}.display must be [x, z, rotY?]`);
       else if (!inside(d.display[0], d.display[1], r, 0.5)) errors.push(`${at}.display must sit inside its rect`);
     }
+    if (d.panel != null && !PANEL_KINDS.includes(d.panel)) errors.push(`${at}.panel must be one of ${PANEL_KINDS.join(', ')}`);
+    if (d.panel != null && d.display == null) errors.push(`${at}.panel needs a display to show it on`);
     if (d.partition != null) {
       const p = d.partition, side = /^(north|south)$/.test(p.door) ? r[2] - r[0] : r[3] - r[1];
       if (!isNum(p.height) || p.height < 0.5 || p.height > 3) errors.push(`${at}.partition.height must be 0.5–3 m`);
@@ -70,6 +73,7 @@ export function validateDepartments(cfg) {
     for (const d of depts) if (rectsOverlap(rm.rect, d.rect)) errors.push(`${at} overlaps area "${d.id}"`);
     if (!SIDES.includes(rm.door)) errors.push(`${at}.door must be one of ${SIDES.join(', ')}`);
     if (rm.seats != null && (!Number.isInteger(rm.seats) || rm.seats < 0 || rm.seats > 12)) errors.push(`${at}.seats must be an integer 0–12`);
+    if (rm.panel != null && !PANEL_KINDS.includes(rm.panel)) errors.push(`${at}.panel must be one of ${PANEL_KINDS.join(', ')}`);
   });
 
   // desks must not overlap each other; plants must not stand on a desk or chair

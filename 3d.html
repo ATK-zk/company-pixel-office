@@ -6,7 +6,7 @@
 <title>Trading HQ — Oficina 3D (prototipo)</title>
 <meta name="description" content="Prototipo 3D de la oficina de trading. Fases 1–3: escena, plano y personas con el estado real de status.json.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 4l8 12-8 12-8-12z' fill='%23c6ff3d'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="office3d/office3d.css?v=3">
+<link rel="stylesheet" href="office3d/office3d.css?v=4">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -18,7 +18,7 @@
 
 <header id="bar">
   <b class="brand"><i></i>Trading HQ</b>
-  <span class="badge" title="Fases 1–3: escena, plano y personas con el estado de status.json. Las pantallas aún no muestran datos.">PROTOTIPO · FASE 3</span>
+  <span class="badge" title="Fases 1–4: escena, plano, personas con el estado de status.json y pantallas con datos etiquetados por origen.">PROTOTIPO · FASE 4</span>
   <span id="src" class="src" hidden role="status"></span>
   <a class="link" href="index.html">Vista 2D clásica</a>
   <div id="filters" role="group" aria-label="Filtrar agentes por estado"></div>
@@ -30,6 +30,7 @@
   <button id="zin" type="button" title="Acercar (+)" aria-label="Acercar">+</button>
   <button id="zout" type="button" title="Alejar (−)" aria-label="Alejar">−</button>
   <button id="zreset" type="button" title="Vista general (Esc)" aria-label="Volver a la vista general">⌂</button>
+  <button id="dataBtn" type="button" title="Datos de la mesa" aria-label="Mostrar datos de la mesa" aria-pressed="false">$</button>
   <button id="perfBtn" type="button" title="Rendimiento (P) · benchmark (B)" aria-label="Mostrar rendimiento">fps</button>
 </nav>
 
@@ -38,13 +39,24 @@
   <div id="pBody"></div>
 </aside>
 
+<aside id="dash" hidden aria-live="polite">
+  <button id="dashClose" type="button" aria-label="Cerrar datos">×</button>
+  <div id="dashBody"></div>
+</aside>
+
+<div id="screenView" hidden role="dialog" aria-modal="true" aria-labelledby="svTitle"><div class="sv">
+  <header><b id="svTitle"></b><button id="svClose" type="button" aria-label="Cerrar pantalla">×</button></header>
+  <div id="svCanvas"></div>
+  <p class="note">Mismo panel que la pantalla 3D. Cada bloque indica su origen: REAL (API pública del proveedor), status.json, CALCULADO o SIN DATOS.</p>
+</div></div>
+
 <pre id="perf" hidden aria-live="off"></pre>
-<p id="hint">Arrastrar: desplazar · Rueda: zoom · Botón derecho: girar · Clic en un área: acercar · Esc: vista general</p>
+<p id="hint">Arrastrar: desplazar · Rueda: zoom · Botón derecho: girar · Clic en un área o pantalla: acercar o ver · Esc: vista general</p>
 
 <div id="loader" role="status"><div><span id="ldMsg">Abriendo la oficina</span><i><u id="ldBar"></u></i></div></div>
 <div id="error" role="alert" hidden><div>
   <h1 id="errTitle"></h1><p id="errDetail"></p>
   <p><a href="index.html">Abrir la vista 2D clásica</a> · <a href="3d.html">Reintentar</a> · <a href="3d.html?q=low">Calidad baja</a></p>
 </div></div>
-<script type="module" src="office3d/boot.js?v=3"></script>
+<script type="module" src="office3d/boot.js?v=4"></script>
 </body></html>

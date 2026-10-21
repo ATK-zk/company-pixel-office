@@ -31,6 +31,9 @@ Rama: `feat/oficina-3d` (solo local, sin push). Hacer merge a `main` publica en 
 | `office3d/agents.js` | Personas sentadas, poses y animación por estado |
 | `office3d/status.js` | Adaptador puro de `status.json`: estados, antigüedad, filtros, validación de agentes |
 | `office3d/panel.js` | Ficha de agente, panel de área o sala y aviso de origen de datos |
+| `office3d/data.js` | Proveedor público (equity, leaderboard), cálculos y etiquetas de origen |
+| `office3d/screens.js` | Paneles 2D en canvas para las pantallas 3D |
+| `office3d/dashboard.js` | Panel de datos fuera de la escena |
 | `office3d/perf.js` | Panel de rendimiento y benchmark |
 | `office3d/webgl.js` | Detección de WebGL |
 | `config/departments.json` | Oficina, áreas, puestos, pantallas, salas, plantas y pasillos |
@@ -159,12 +162,66 @@ Corregido durante la medición: al filtrar se producía un frame de 500 ms porqu
 `npm test` → 33/33 en verde. Nuevos (`tests/status.test.js`): mapeo de estados, lectura de `as_of` (ICT, ISO y sin zona), `status.json` real como dato antiguo, solo anima `WORKING` con dato reciente, umbral de antigüedad, agente ausente, estado desconocido, fallo de lectura, fixture demo, formato de antigüedad, filtros y validación de `config/agents.json`.
 Comprobado a mano: etiquetas y estados reales, ficha de Quant, demo con Quant tecleando y Risk Watch en error, filtro "Error / degradado" y sin errores en consola.
 
+## Fase 4 — pantallas y panel de datos ✅
+
+### Fuentes de datos
+
+| Origen | Etiqueta | Qué aporta | Frecuencia |
+|---|---|---|---|
+| API pública Polymarket Perps `…/v1/info/portfolio?address=` | **REAL · proveedor** | Equity, número de posiciones abiertas, hora del proveedor | 20 s |
+| API pública `…/v1/info/leaderboard?…&address=` | **REAL · proveedor** | P&L y ROI acumulados (definición del proveedor), volumen, ranking | 120 s |
+| `status.json` (sync externo) | **status.json** | Estados y tareas de los agentes, `net_value` (equity y P&L del día), `systems` | 60 s |
+| Cálculo en el navegador | **CALCULADO** | Uso del límite diario, discrepancia de equity, exposición cuando hay 0 posiciones | al cambiar los datos |
+| Sin fuente | **SIN DATOS** | Se muestra "—" con el motivo; nunca se rellena | — |
+
+Son los mismos endpoints públicos, sin autenticación y de solo lectura (GET), que ya usaba la vista 2D. La dirección de cuenta se lee de `status.json` → `leaderboard_account`. **Ningún código de esta vista puede enviar órdenes.**
+
+### Hallazgo en los datos reales (22-10-2026)
+
+- El proveedor indica **equity ≈ 0,00 $** (6,6·10⁻⁷) y **0 posiciones abiertas**. El leaderboard da un P&L acumulado de **−134,24 $**, un ROI de −31,1 % y un volumen de 129,7 K $ (puesto 1013 de ~31.786).
+- `status.json` sigue diciendo **400,00 $** de equity y −32,89 $ de P&L del día, con fecha del 12-10-2026.
+- La oficina lo marca como **"Discrepancia entre fuentes"** en la pantalla de Riesgo, en la de resumen y en el panel de datos. No se ha investigado la causa (fuera del alcance de este repositorio); la decisión es del propietario.
+
+Terminado:
+- **Paneles 2D sobre las pantallas 3D** (`office3d/screens.js`): canvas de 768×432 como textura en las 6 pantallas de área y en la de la sala, configurados con `panel` en `config/departments.json`. Solo se repintan cuando cambian los datos.
+
+  | Pantalla | Contenido |
+  |---|---|
+  | Investigación | Estado y tarea de Scout; feed de noticias **sin integración** |
+  | Quant & Data | Equity real, posiciones, gráfico de la sesión (una muestra cada 20 s); backtests sin datos |
+  | Estrategia | Estado y tarea del Desk Lead; propuestas: ninguna publicada (una propuesta no es una orden) |
+  | Control de Riesgo | P&L del día (status.json), uso del límite del 15 % (calculado, con fórmula), discrepancia, sistemas |
+  | Ejecución | Estado de Ops; órdenes MOCK/PAPER sin registro; aviso de solo lectura; posiciones reales |
+  | Supervisión | Estado de los 6 agentes y sistemas; costes y latencia sin datos |
+  | Sala de reuniones | Resumen: equity, P&L acumulado, volumen, P&L del día, ranking, agentes trabajando |
+
+- **Visor de pantalla**: un clic en una pantalla 3D, o "Ver pantalla →" en el panel del área o de la sala, la abre a tamaño completo. Desde la vista isométrica el texto en 3D no se lee, así que este visor es la forma de leerlas.
+- **Panel de datos** (botón `$`): todas las métricas de la especificación, cada una con origen y hora: equity (proveedor y status.json), discrepancia, posiciones, exposición, P&L acumulado, ROI, P&L del día, uso del límite diario, volumen, ranking, sistemas. P&L realizado/no realizado, drawdown, operaciones y tasa de acierto, costes de modelos y latencia aparecen como **SIN DATOS**, con el motivo. El **modo operativo** figura como "No publicado": `status.json` no indica MOCK, PAPER o LIVE.
+- En el **modo demo** no se consulta el proveedor: ningún valor aparece como REAL.
+- **Errores:** tiempo de espera de 8 s por petición. Si falla, se conserva el último dato bueno con su hora y el error queda visible.
+- **Corregido durante los tests:** si llegaba tarde una respuesta de una cuenta anterior, podía mostrarse como de la cuenta nueva. Ahora un contador de generación la descarta.
+
+Provisional:
+- Los **monitores de los puestos** siguen con un brillo genérico, sin datos (no muestran nada inventado). Pintar datos por puesto obligaría a dejar de instanciarlos; queda como opción.
+- El gráfico de equity solo cubre **la sesión actual**: no hay historial persistente. Por eso no se calcula el drawdown.
+- La fórmula del límite diario usa `net_value` de `status.json`, que hoy tiene 10 días.
+
+### Rendimiento medido (22-10-2026, navegador integrado, 629×558, DPR 1)
+
+| Escena | Draw calls | Texturas | Triángulos | Carga | Resultado |
+|---|---|---|---|---|---|
+| Datos reales con proveedor | 87 | 11 | 39.496 | ~1.220 ms | 0 frames en 3 s en reposo · bench 59,2 FPS · p95 16,8 ms · peor 66,7 ms (pico aislado) |
+
+### Tests
+
+`npm test` → 42/42 en verde. Nuevos (`tests/data.test.js`): lectura de portfolio y leaderboard con las formas reales de la API, segundos frente a milisegundos, `net_value` de `status.json`, fórmula del límite diario, discrepancia, formatos, solo dos endpoints de lectura, panel de datos (ninguna cifra sin origen, lo que falta etiquetado, discrepancia detectada, ningún REAL sin datos del proveedor) y poller (dirección inválida, errores HTTP, parada limpia y descarte de respuestas tardías).
+Comprobado a mano: pantallas de Riesgo, Resumen y Quant en el visor, panel de datos completo, modo demo sin consultas al proveedor y sin errores en consola.
+
 ## Pendiente (siguientes fases)
 
-- **Fase 4:** monitores con paneles 2D: equity, ranking y P&L reales con su fuente y hora; todo lo demás marcado **DEMO**.
 - **Fase 5:** el adaptador de estado ya existe (Fase 3); falta el panel de sistemas (`systems`), las métricas por rol y la insignia de modo MOCK/PAPER.
 - **Fase 6/7:** documentar qué depende del backend externo (riesgo, paper trading, latencias) y optimizar.
 
 ## Seguridad
 
-Este repositorio solo **lee datos**: no contiene código que firme ni envíe órdenes, ni claves. La Fase 1 no añade llamadas de red salvo la carga de three.js y de `config/departments.json`. LIVE no se habilita desde aquí.
+Este repositorio solo **lee datos**: no contiene código que firme ni envíe órdenes, ni claves. Llamadas de red de la vista 3D: three.js (CDN), los JSON de `config/`, `status.json` y, desde la Fase 4, dos GET públicos de solo lectura a la API de Polymarket Perps (portfolio y leaderboard), los mismos que ya usaba la vista 2D. LIVE no se habilita desde aquí.
