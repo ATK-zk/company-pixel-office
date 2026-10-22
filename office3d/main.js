@@ -222,6 +222,7 @@ export async function start({ root, params, progress, onFatal }) {
   controls.addEventListener('start', () => { tween = null; });
 
   function flyTo(x, z, zoom, { ms = 750, offset = null } = {}) {
+    if (reducedMotion) ms = 1; // prefers-reduced-motion: jump instead of gliding
     tween = { t0: performance.now(), ms,
       from: { x: controls.target.x, z: controls.target.z, zoom: camera.zoom, off: camera.position.clone().sub(controls.target) },
       to: { x, z, zoom: clampZoom(zoom), off: offset } };
@@ -317,8 +318,10 @@ export async function start({ root, params, progress, onFatal }) {
   // full-size view of a screen's 2D panel (the same canvas the 3D screen uses)
   const screenOf = z => { const s = screens.find(x => x.dept.id === z.id); return s ? s.scr : null; };
   const viewer = $('screenView');
-  function openScreen(scr) { $('svCanvas').replaceChildren(scr.canvas); $('svTitle').textContent = scr.title(); viewer.hidden = false; $('svClose').focus(); }
-  function closeScreen() { viewer.hidden = true; $('svCanvas').replaceChildren(); }
+  let opener = null;
+  function openScreen(scr) { opener = document.activeElement; $('svCanvas').replaceChildren(scr.canvas); $('svTitle').textContent = scr.title(); viewer.hidden = false; $('svClose').focus(); }
+  function closeScreen() { viewer.hidden = true; $('svCanvas').replaceChildren(); if (opener && opener.isConnected) opener.focus(); opener = null; }
+  viewer.addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); $('svClose').focus(); } }); // the dialog has one control
   $('svClose').onclick = closeScreen; viewer.addEventListener('click', e => { if (e.target === viewer) closeScreen(); });
   function refreshPanel() {
     if (!sel || !$('dash').hidden) { panel.hidden = true; return; }
@@ -417,7 +420,7 @@ export async function start({ root, params, progress, onFatal }) {
   progress(0.9, 'Compilando shaders');
   await renderer.compileAsync(scene, camera);
   loadMs = performance.now() - t0;
-  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, statuses: () => statuses, activity: () => activityLog, poll: () => pollStatus(), selectAgent: id => select({ agent: id }), view: (x, z, zoom) => flyTo(x, z, zoom), market: () => market.state, runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
+  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, dispose: () => dispose(), statuses: () => statuses, activity: () => activityLog, poll: () => pollStatus(), selectAgent: id => select({ agent: id }), view: (x, z, zoom) => flyTo(x, z, zoom), market: () => market.state, runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
   if (params.get('perf') === '1') perf.toggle(true);
   invalidate();
   return { dispose, select, recenter };

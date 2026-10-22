@@ -5,7 +5,8 @@
   "description": "Static GitHub Pages site. No build step; package.json only runs tests and the local dev server.",
   "scripts": {
     "test": "node --test \"tests/*.test.js\"",
-    "serve": "node tools/serve.mjs 8123"
+    "serve": "node tools/serve.mjs 8123",
+    "bump": "node tools/bump.mjs"
   },
   "engines": { "node": ">=22" }
 }

@@ -40,6 +40,9 @@ Rama: `feat/oficina-3d` (solo local, sin push). Hacer merge a `main` publica en 
 | `config/departments.json` | Oficina, áreas, puestos, pantallas, salas, plantas y pasillos |
 | `config/agents.json` | Nombre, cargo, función y aspecto de cada agente; umbral de dato antiguo |
 | `config/status.demo.json` | Fixture de demostración (`?status=demo`), marcado como demo |
+| `tools/bump.mjs` | Versión de los módulos, import map y hash de la CSP (`npm run bump`) |
+| `tools/serve.mjs` | Servidor estático local (`npm run serve`) |
+| `docs/STATUS_CONTRACT.md` | Contrato de `status.json` |
 | `tests/*.test.js` | Tests (`npm test`) |
 
 ## Uso
@@ -48,6 +51,8 @@ Rama: `feat/oficina-3d` (solo local, sin push). Hacer merge a `main` publica en 
 npm run serve        # http://localhost:8123/3d.html
 npm test
 ```
+
+Mantenimiento: tras cambiar cualquier archivo de `office3d/`, ejecutar `npm run bump` (sube la versión, el import map y el hash de la CSP).
 
 Parámetros: `?status=demo` (fixture de demostración) · `?q=low` (sin sombras ni antialias, pixel ratio 1) · `?perf=1` (panel de rendimiento) · `?stress=N` (N escritorios extra sin dueño, máx. 240) · `?view=2d`.
 Teclas: arrastrar = desplazar · rueda = zoom hacia el cursor · botón derecho = girar · flechas = desplazar · `+`/`-` · `Esc`/`0` = vista general · `P` = rendimiento · `B` = benchmark de 5 s.
@@ -242,10 +247,90 @@ Pendiente del propietario (no se puede hacer desde aquí):
 `npm test` → 52/52 en verde. Nuevos (`tests/contract.test.js`): `status.json` actual sin campos opcionales, lectura y límites de los campos nuevos, enlaces permitidos y bloqueados, `updated_at` por agente, modos (ausente, conocido, LIVE, desconocido), validación del archivo actual y de uno roto, fixture demo conforme al contrato, actividad observada (nada en la primera lectura, cambios de estado y tarea, límite de 20), mezcla de actividad publicada y observada, y fila de modo del panel de datos con LIVE.
 Comprobado a mano: insignia "Modo no publicado" con datos reales, calidad de datos con un único aviso, ninguna actividad inventada tras dos lecturas iguales, ficha de Quant en demo con todos los campos y consola sin errores.
 
-## Pendiente (siguientes fases)
+## Fase 6 — riesgo y paper trading ⛔ depende del backend externo
 
-- **Fase 6 — riesgo y paper trading:** el motor de riesgo, la simulación de órdenes, la conciliación y el kill switch pertenecen al backend externo, no a esta vista. Aquí solo se puede documentar qué falta y mostrarlo cuando `status.json` lo publique.
-- **Fase 7 — optimización y validación:** cache busting de módulos, medición en un equipo modesto o un móvil, revisión de accesibilidad y decidir si `3d.html` pasa a ser la página principal.
+**No implementada en este repositorio, a propósito.** La especificación (§6, §10, §11) pide que el motor de riesgo, la ejecución, la conciliación y el kill switch sean servicios separados del frontend, y que "el frontend nunca sea la autoridad de saldo, P&L, órdenes o posiciones". Este repositorio es solo ese frontend: un sitio estático de GitHub Pages sin backend. Implementar aquí un "motor de riesgo" o un "simulador de órdenes" sería justo lo que la especificación prohíbe, porque daría una falsa sensación de control.
+
+| Requisito | Dónde debe vivir | Estado verificable desde aquí | Qué mostraría la oficina |
+|---|---|---|---|
+| Motor de riesgo determinista que rechaza propuestas | Backend externo | **No verificable.** El README menciona un límite de pérdida diaria del 15 % vigilado por Risk Watch, sin código visible | Estado de Risk Watch; uso del límite calculado con `net_value` (Fase 4) |
+| Propuestas con esquema versionado (§8) | Backend externo | **No existe** ningún registro de propuestas publicado | Pantalla de Estrategia preparada ("0 conocidas") |
+| Ejecución MOCK/PAPER con costes, deslizamiento y rechazos | Backend externo | **No verificable.** `status.json` menciona "DRY" y "paper AAVE/XRP/SILVER" en las tareas, pero no publica órdenes | Pantalla de Ejecución preparada; posiciones reales del proveedor |
+| Conciliación de órdenes, posiciones y saldo | Backend externo | **Indicio de fallo:** discrepancia actual entre proveedor (~0 $) y `status.json` (400 $) | Aviso "Discrepancia entre fuentes" (Fase 4) |
+| Kill switch y política de órdenes pendientes | Backend externo | **No verificable** | Se podría mostrar si `status.json` publicara su estado (ampliación del contrato) |
+| Bloqueo ante datos obsoletos | Backend externo (decisión) / oficina (aviso) | La oficina avisa de datos antiguos y no anima; **no puede bloquear** nada porque no opera | Marca "antiguo", calidad de datos |
+| LIVE deshabilitado | Backend externo | **No verificable desde aquí.** El `status.json` del 13-10 habla de un "go-live" previsto a las ~20:15 ICT | Insignia de modo (hoy "no publicado") |
+
+**Riesgo importante para el propietario:** el último `status.json` describe la preparación de un paso a LIVE con dinero real, y el proveedor muestra hoy la cuenta prácticamente vacía. Este trabajo no ha tocado, consultado ni modificado ese sistema. Conviene revisar qué ocurrió después del 13-10 antes de reanudar nada.
+
+Para avanzar la Fase 6 hace falta acceso al repositorio o servicio del backend. Con él: revisar el motor de riesgo y sus tests, el modo de ejecución, la conciliación y el kill switch, y después publicar su estado en `status.json` según el contrato ampliado.
+
+## Fase 7 — optimización y validación ✅
+
+Terminado:
+- **Caché sin mezclas de versiones:** todos los módulos de `office3d/` se cargan con `?v=N` mediante el import map de `3d.html`, igual que `boot.js` y el CSS. `npm run bump [N]` lo regenera todo; un test comprueba que `3d.html` coincide exactamente con lo que genera el script (versión actual: **v8**). Resuelve el aviso de caché de la Fase 2.
+- **Content-Security-Policy** en `3d.html`:
+  - scripts solo del propio sitio y de `cdn.jsdelivr.net` (three.js 0.170.0, versión fija), y el import map inline solo mediante su hash SHA-256;
+  - conexiones solo al propio sitio y a `api.perpetuals.polymarket.com`;
+  - sin `unsafe-inline` ni `unsafe-eval`, con `object-src 'none'`, `base-uri 'none'`, `form-action 'none'` y `referrer: no-referrer`.
+
+  Así queda **impuesto por el navegador** que la página no puede enviar datos a ningún otro destino.
+- **Accesibilidad:**
+  - con `prefers-reduced-motion`, la cámara salta en lugar de deslizarse y no hay animación de tecleo;
+  - el visor de pantallas devuelve el foco al elemento que lo abrió y retiene el tabulador;
+  - todos los controles son botones con etiqueta accesible y foco visible.
+- **Móvil:** en pantallas estrechas se ocultan los rótulos de área (siguen en la lista inferior) y se reducen las etiquetas de agente. La marca "antiguo" se mantiene visible.
+- **Ciclo de vida verificado:** tras `dispose()` desaparecen el canvas y las etiquetas, no hay más frames ni peticiones, y los controles no lanzan errores.
+
+### Rendimiento final (22-10-2026, navegador integrado de Claude Desktop, Windows 10)
+
+| Escenario | Viewport | Draw calls | Triángulos | Carga | Bench 5 s | p95 | Peor frame |
+|---|---|---|---|---|---|---|---|
+| Normal, datos reales | 629×558, DPR 1 | 87 | 39.496 | 1.124 ms | 59,2 FPS | 16,8 ms | 49,3 ms |
+| `?q=low` | 629×558, DPR 1 | 87 | 39.496 | 3.602 ms* | 59,4 FPS | 16,8 ms | 50,2 ms |
+| Móvil emulado | 375×812, DPR 2 | 87 | 39.496 | 1.087 ms | 59,2 FPS | 16,8 ms | 49,9 ms |
+| Reposo (sin animaciones) | — | — | — | — | **0 frames en 3 s** | — | — |
+
+\*Una sola muestra, probablemente por la descarga desde el CDN; no se ha repetido. Los FPS están limitados por vsync (60). Se observa siempre **un pico aislado de ~50 ms** durante el benchmark, sin identificar (posiblemente la primera actualización de sombras o de texturas al girar).
+
+**No medido:** equipo modesto real, móvil físico, GPU integrada antigua, Safari y Firefox. El móvil "emulado" usa la GPU del PC, así que **no representa** el rendimiento de un teléfono.
+
+### Tests
+
+`npm test` → **59/59 en verde**. Nuevos (`tests/build.test.js`): versión única para todos los módulos, `3d.html` igual a la salida de `npm run bump`, hash y directivas de la CSP, sintaxis de todo el JavaScript (incluidos `office.js` y `music.js` de la vista 2D), ausencia de `innerHTML`/`eval`, URLs y métodos de red permitidos, y ausencia de secretos en los archivos servidos.
+
+## Estado final
+
+| | Estado |
+|---|---|
+| Oficina 3D interactiva (cámara, zoom, desplazamiento, giro, selección, transiciones) | ✅ Terminado |
+| Seis áreas configurables, sala de reuniones, puestos, mobiliario y ventanal | ✅ Terminado |
+| Una persona por agente real, con pose según `status.json` y sin fingir actividad | ✅ Terminado (estilizado, no realista) |
+| Ficha de agente, filtros por estado, actividad, modo | ✅ Terminado; muchos campos "no disponibles" hasta que el sync los publique |
+| Pantallas con datos reales o etiquetados; panel de datos | ✅ Terminado |
+| Carga, error, fallback 2D, datos antiguos, sin conexión | ✅ Terminado |
+| Rendimiento y ciclo de vida | ✅ Medido en un entorno; ⚠️ falta hardware modesto real |
+| Seguridad (solo lectura, CSP, sin secretos, MOCK/PAPER) | ✅ En la vista; ⚠️ el modo real del backend no es verificable |
+| Motor de riesgo, paper trading, conciliación, kill switch | ⛔ Backend externo (Fase 6) |
+| Personajes realistas como en la imagen de referencia | ⚠️ Provisional: requiere modelos GLB con licencia |
+| Monitores de puesto con datos | ⚠️ Brillo genérico sin datos (decisión de rendimiento) |
+| `3d.html` como página principal | ⏸ Decisión del propietario; `index.html` sigue intacto |
+
+## Riesgos conocidos
+
+1. **Posible paso a LIVE en el backend** (según el `status.json` del 13-10) y cuenta casi vacía según el proveedor. Fuera de este repositorio: revisar con prioridad.
+2. **`status.json` lleva 9 días sin actualizarse**: toda la oficina muestra datos antiguos.
+3. **Discrepancia de equity** (proveedor ~0 $ frente a 400 $ en `status.json`).
+4. Dependencia del CDN jsDelivr para three.js: si cae, la vista 3D muestra el error y el enlace a la 2D. Alternativa: copiar three.js al repositorio (unos 700 KB).
+5. Hacer merge a `main` **publica** el sitio. Revisar antes.
+
+## Pasos que requieren al propietario
+
+1. Revisar la rama `feat/oficina-3d` y decidir si se publica (merge a `main`) y si `3d.html` sustituye a `index.html` o convive con ella.
+2. Reanudar el sync de `status.json` y, si se quiere, publicar `mode` y los campos del contrato ([STATUS_CONTRACT.md](STATUS_CONTRACT.md)).
+3. Dar acceso al backend para abordar la Fase 6.
+4. Investigar la discrepancia de equity.
+5. Opcional: aportar modelos 3D con licencia para personajes más realistas.
 
 ## Seguridad
 

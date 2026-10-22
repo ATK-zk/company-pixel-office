@@ -136,3 +136,9 @@ button{font:inherit;color:inherit}
 #panel ul.act time{font-family:var(--mono);color:var(--muted)}
 #panel ul.kv li{display:flex;justify-content:space-between;gap:10px;font-size:12px}
 #panel ul.kv b{font-family:var(--mono);font-weight:600}
+/* Phase 7: narrow screens — area captions live in the bottom list, agent tags shrink */
+@media (max-width:760px){
+  .zl.area{display:none}
+  .zl.agent span{padding:3px 9px;font-size:12px;gap:5px}
+  .zl i{width:8px;height:8px}
+}
