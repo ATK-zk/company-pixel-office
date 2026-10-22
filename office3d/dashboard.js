@@ -1,12 +1,12 @@
 // Data panel outside the 3D scene (spec §9): every metric with its source and time; missing ones say so.
 import { SOURCE, syncedNetValue, lossCap, discrepancy, fmtUsd, fmtCompactUsd, fmtPct, DAILY_LOSS_CAP_PCT } from './data.js';
-import { formatAge } from './status.js';
+import { formatAge, modeInfo, validateStatus } from './status.js';
 
 const h = (tag, props = {}, ...kids) => { const el = Object.assign(document.createElement(tag), props); el.append(...kids.filter(k => k != null)); return el; };
 const at = t => t ? new Date(t).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
 
 // Pure: the rows the panel shows, so tests can check that nothing is shown without a source.
-export function dashboardRows({ market, status, statusError }) {
+export function dashboardRows({ market, status, statusError, placedIds = [] }) {
   const p = market.portfolio, lb = market.leaderboard, nv = syncedNetValue(status), cap = lossCap(nv), err = market.errors;
   const lbOk = !!(lb && lb.found);
   const provErr = err.address || err.portfolio;
@@ -32,12 +32,20 @@ export function dashboardRows({ market, status, statusError }) {
     { label: 'Volumen total', value: lbOk ? fmtCompactUsd(lb.notional) : '—', src: lbOk ? 'real' : 'none', when: lb && lb.ts },
     { label: 'Ranking de volumen', value: lbOk ? `#${lb.rank.toLocaleString('es-ES')} de ${Number.isFinite(lb.total) ? lb.total.toLocaleString('es-ES') : '—'}` : '—', src: lbOk ? 'real' : 'none', when: lb && lb.ts },
     { group: 'Operación' },
-    { label: 'Modo operativo', value: 'No publicado', src: 'none', note: 'status.json no indica MOCK, PAPER o LIVE. Esta vista es de solo lectura y no envía órdenes.' },
+    (() => { const m = modeInfo(status); return m.known
+      ? { label: 'Modo operativo', value: m.label, src: 'sync', warn: m.live, note: m.live ? 'informado por status.json; esta vista no opera ni puede enviar órdenes' : 'informado por status.json; esta vista no envía órdenes' }
+      : { label: 'Modo operativo', value: 'No publicado', src: 'none', note: (status && status.mode != null ? m.label + '. ' : '') + 'status.json no indica MOCK, PAPER o LIVE. Esta vista es de solo lectura y no envía órdenes.' }; })(),
     { label: 'Costes de modelos y latencia', value: '—', src: 'none', note: 'sin telemetría conectada' },
   );
   const sys = status && Array.isArray(status.systems) ? status.systems : [];
   for (const s of sys) rows.push({ label: `Sistema: ${s.name}`, value: s.ok ? 'OK' : 'FALLO', src: 'sync', warn: !s.ok, note: 'según el último status.json' });
   if (statusError) rows.push({ label: 'status.json', value: 'sin conexión', src: 'none', warn: true, note: statusError });
+  if (status) {
+    const q = validateStatus(status, placedIds);
+    rows.push({ group: 'Calidad de status.json (contrato v1)' });
+    if (!q.length) rows.push({ label: 'Comprobaciones', value: 'Sin avisos', src: 'calc' });
+    for (const x of q) rows.push({ label: x.level === 'warn' ? 'Aviso' : 'Nota', value: x.text, src: 'calc', warn: x.level === 'warn' });
+  }
   return rows;
 }
 

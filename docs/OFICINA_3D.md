@@ -34,6 +34,7 @@ Rama: `feat/oficina-3d` (solo local, sin push). Hacer merge a `main` publica en 
 | `office3d/data.js` | Proveedor público (equity, leaderboard), cálculos y etiquetas de origen |
 | `office3d/screens.js` | Paneles 2D en canvas para las pantallas 3D |
 | `office3d/dashboard.js` | Panel de datos fuera de la escena |
+| `office3d/activity.js` | Actividad reciente: publicada en status.json y observada en la sesión |
 | `office3d/perf.js` | Panel de rendimiento y benchmark |
 | `office3d/webgl.js` | Detección de WebGL |
 | `config/departments.json` | Oficina, áreas, puestos, pantallas, salas, plantas y pasillos |
@@ -217,10 +218,34 @@ Provisional:
 `npm test` → 42/42 en verde. Nuevos (`tests/data.test.js`): lectura de portfolio y leaderboard con las formas reales de la API, segundos frente a milisegundos, `net_value` de `status.json`, fórmula del límite diario, discrepancia, formatos, solo dos endpoints de lectura, panel de datos (ninguna cifra sin origen, lo que falta etiquetado, discrepancia detectada, ningún REAL sin datos del proveedor) y poller (dirección inválida, errores HTTP, parada limpia y descarte de respuestas tardías).
 Comprobado a mano: pantallas de Riesgo, Resumen y Quant en el visor, panel de datos completo, modo demo sin consultas al proveedor y sin errores en consola.
 
+## Fase 5 — integración de agentes ✅ (hasta donde llega este repositorio)
+
+El backend que ejecuta los agentes **no está en este repositorio**. La única interfaz con él es `status.json`, que escribe un proceso externo. Esta fase, por tanto, define y consume un contrato sin inventar datos: **[docs/STATUS_CONTRACT.md](STATUS_CONTRACT.md)**.
+
+Terminado:
+- **Contrato v1 de `status.json`**, con campos opcionales: `mode`, y por agente `updated_at`, `last_result`, `latency_ms`, `errors`, `metrics`, `evidence` y `recent`. Todos se validan y se acotan (longitudes, número de elementos). Si faltan, la ficha dice "No disponible en status.json".
+- **Antigüedad por agente:** `updated_at` sustituye a `team.as_of` para ese agente y decide si se anima.
+- **Enlaces de evidencia seguros:** solo `https://` o rutas relativas del sitio. `javascript:`, `data:`, `http:` y `//host` se descartan.
+- **Insignia de modo** en la barra superior, según `status.json` → `mode`: "Modo no publicado" (hoy), MOCK, PAPER o **LIVE en rojo**, siempre con "vista solo lectura". Mostrar LIVE no habilita nada: esta vista no tiene ningún camino para operar.
+- **Actividad reciente** en la ficha, de dos fuentes separadas y etiquetadas: `recent` publicado en `status.json` y los cambios de estado o tarea **observados** en esta sesión entre dos lecturas correctas (no se inventa nada en la primera lectura ni sin cambios).
+- **Calidad de `status.json`** en el panel de datos: avisos de contrato (hora sin zona, agentes ausentes o sobrantes, estados desconocidos, `systems`/`net_value` mal formados, dirección inválida, enlaces no permitidos, modo ausente o desconocido). Con el archivo actual, el único aviso es que `mode` no se publica.
+- El panel de sistemas (`systems`) ya aparecía en Riesgo, Supervisión y el panel de datos desde la Fase 4.
+- El fixture demo usa todos los campos nuevos, marcados `[DEMO]`, y `mode: PAPER`, que se muestra como "PAPER (demo)".
+
+Pendiente del propietario (no se puede hacer desde aquí):
+1. Que el proceso de sincronización publique `mode` y los campos por agente del contrato.
+2. Reanudar la sincronización: el último `status.json` es del 13-10-2026.
+3. Revisar la discrepancia de equity (proveedor ~0 $ frente a 400 $ en `status.json`).
+
+### Tests
+
+`npm test` → 52/52 en verde. Nuevos (`tests/contract.test.js`): `status.json` actual sin campos opcionales, lectura y límites de los campos nuevos, enlaces permitidos y bloqueados, `updated_at` por agente, modos (ausente, conocido, LIVE, desconocido), validación del archivo actual y de uno roto, fixture demo conforme al contrato, actividad observada (nada en la primera lectura, cambios de estado y tarea, límite de 20), mezcla de actividad publicada y observada, y fila de modo del panel de datos con LIVE.
+Comprobado a mano: insignia "Modo no publicado" con datos reales, calidad de datos con un único aviso, ninguna actividad inventada tras dos lecturas iguales, ficha de Quant en demo con todos los campos y consola sin errores.
+
 ## Pendiente (siguientes fases)
 
-- **Fase 5:** el adaptador de estado ya existe (Fase 3); falta el panel de sistemas (`systems`), las métricas por rol y la insignia de modo MOCK/PAPER.
-- **Fase 6/7:** documentar qué depende del backend externo (riesgo, paper trading, latencias) y optimizar.
+- **Fase 6 — riesgo y paper trading:** el motor de riesgo, la simulación de órdenes, la conciliación y el kill switch pertenecen al backend externo, no a esta vista. Aquí solo se puede documentar qué falta y mostrarlo cuando `status.json` lo publique.
+- **Fase 7 — optimización y validación:** cache busting de módulos, medición en un equipo modesto o un móvil, revisión de accesibilidad y decidir si `3d.html` pasa a ser la página principal.
 
 ## Seguridad
 

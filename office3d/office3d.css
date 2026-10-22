@@ -128,3 +128,11 @@ button{font:inherit;color:inherit}
 #screenView canvas{display:block;width:100%;height:auto;border-radius:6px}
 #screenView .note{margin:8px 0 0;font-size:12px;color:var(--muted)}
 #svClose{width:32px;height:32px;border:0;border-radius:8px;background:none;font-size:20px;cursor:pointer}
+
+/* Phase 5: mode badge, activity and metric lists */
+.src.mode.live{background:rgba(255,93,115,.16);animation:none}
+#panel ul.act,#panel ul.kv{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+#panel ul.act li{font-size:12px}
+#panel ul.act time{font-family:var(--mono);color:var(--muted)}
+#panel ul.kv li{display:flex;justify-content:space-between;gap:10px;font-size:12px}
+#panel ul.kv b{font-family:var(--mono);font-weight:600}

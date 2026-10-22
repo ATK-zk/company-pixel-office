@@ -15,7 +15,7 @@ Live pixel headquarters for our 6-person Polymarket Perps trading desk.
 
 GitHub Pages deploys from `main`. Merging to `main` publishes the site.
 
-**3D office (in progress):** `3d.html` is a Three.js prototype of the office, with six areas each tied to one agent. The 2D office above stays the default and is the fallback. Run it locally with `npm run serve` (open `/3d.html`); run the tests with `npm test`. Progress, measurements and pending work are in [docs/OFICINA_3D.md](docs/OFICINA_3D.md).
+**3D office (in progress):** `3d.html` is a Three.js prototype of the office, with six areas each tied to one agent. The 2D office above stays the default and is the fallback. Run it locally with `npm run serve` (open `/3d.html`); run the tests with `npm test`. Progress, measurements and pending work are in [docs/OFICINA_3D.md](docs/OFICINA_3D.md); the fields the 3D office reads from `status.json` are in [docs/STATUS_CONTRACT.md](docs/STATUS_CONTRACT.md).
 
 ## Design
 - **Palette:** obsidian and graphite, champagne-gold trim, one cyan accent for tech, green/red used only for P&L.

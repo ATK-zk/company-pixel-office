@@ -10,8 +10,9 @@ import { validateDepartments, officeBounds, clampTarget, clampZoom, focusFor, ov
 import { createMaterials, workstationKit, chairKit, displayKit, plantKit, tableKit, buildKit } from './furniture.js';
 import { buildArchitecture } from './architecture.js';
 import { buildAgents } from './agents.js';
-import { agentStatuses, validateAgents, matchesFilter, FILTERS, STATES } from './status.js';
-import { renderAgent, renderArea, renderRoom, renderSource } from './panel.js';
+import { agentStatuses, validateAgents, matchesFilter, modeInfo, FILTERS, STATES } from './status.js';
+import { diffStatuses, appendLog, recentActivity } from './activity.js';
+import { renderAgent, renderArea, renderRoom, renderSource, renderMode } from './panel.js';
 import { createScreen } from './screens.js';
 import { createMarket } from './data.js';
 import { renderDashboard } from './dashboard.js';
@@ -256,7 +257,7 @@ export async function start({ root, params, progress, onFatal }) {
   const demo = params.get('status') === 'demo';
   let statuses = agentStatuses(null, agentIds, { error: 'cargando' }), filter = 'all';
   // provider data (public, read-only) for the account named in status.json; demo mode never queries it
-  let lastStatus = null, statusError = null;
+  let lastStatus = null, statusError = null, lastGood = null, activityLog = {};
   const market = createMarket({ onChange: () => repaint() });
   if (demo) market.state.errors.address = 'modo demo: no se consulta el proveedor';
   async function pollStatus() {
@@ -269,11 +270,14 @@ export async function start({ root, params, progress, onFatal }) {
     lastStatus = raw; statusError = error;
     statuses = agentStatuses(raw, agentIds, { staleMs: staleMinutes * 60000, error });
     renderSource($('src'), { status: raw, error, statuses });
+    if (!error && raw) { activityLog = appendLog(activityLog, diffStatuses(lastGood, statuses, Date.now())); lastGood = statuses; }
+    const mode = modeInfo(raw);
+    renderMode($('mode'), raw && raw.demo ? { ...mode, label: mode.label + ' (demo)' } : mode);
     if (!demo && raw) market.setAddress(raw.leaderboard_account);
     applyStatuses();
   }
   function repaint() {
-    const model = { statuses, agentsCfg, cfg, status: demo ? null : lastStatus, statusError, market: market.state };
+    const model = { statuses, agentsCfg, cfg, status: demo ? null : lastStatus, statusError, market: market.state, placedIds: agentIds };
     for (const s of screens) s.scr.paint(model);
     if (!$('dash').hidden) renderDashboard($('dashBody'), model);
     invalidate();
@@ -320,7 +324,7 @@ export async function start({ root, params, progress, onFatal }) {
     if (!sel || !$('dash').hidden) { panel.hidden = true; return; }
     if (sel.agent) {
       const dept = deptOfAgent(sel.agent);
-      renderAgent(body, { id: sel.agent, meta: agentsCfg.agents[sel.agent], dept, status: statuses[sel.agent], staleMinutes });
+      renderAgent(body, { id: sel.agent, meta: agentsCfg.agents[sel.agent], dept, status: statuses[sel.agent], staleMinutes, activity: recentActivity(statuses[sel.agent], activityLog[sel.agent]) });
     } else if (sel.zone.kind === 'room') renderRoom(body, { room: sel.zone, onScreen: screenOf(sel.zone) && (() => openScreen(screenOf(sel.zone))) });
     else renderArea(body, { dept: sel.zone, meta: agentsCfg.agents[sel.zone.agent], status: statuses[sel.zone.agent], onAgent: () => select({ agent: sel.zone.agent }), onScreen: screenOf(sel.zone) && (() => openScreen(screenOf(sel.zone))) });
     panel.hidden = false;
@@ -413,7 +417,7 @@ export async function start({ root, params, progress, onFatal }) {
   progress(0.9, 'Compilando shaders');
   await renderer.compileAsync(scene, camera);
   loadMs = performance.now() - t0;
-  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, statuses: () => statuses, selectAgent: id => select({ agent: id }), view: (x, z, zoom) => flyTo(x, z, zoom), market: () => market.state, runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
+  window.__office3d = { ...(window.__office3d || {}), loadMs: Math.round(loadMs), desks: desks.length, statuses: () => statuses, activity: () => activityLog, poll: () => pollStatus(), selectAgent: id => select({ agent: id }), view: (x, z, zoom) => flyTo(x, z, zoom), market: () => market.state, runBench: () => { perf.toggle(true); const p = perf.runBench(); invalidate(); return p; }, info: perf.info };
   if (params.get('perf') === '1') perf.toggle(true);
   invalidate();
   return { dispose, select, recenter };
